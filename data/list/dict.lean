@@ -4,17 +4,17 @@ namespace list
 universes u v
 variables {α : Type u} {β : α → Type v}
 variables {a a₁ a₂ : α} {b : β a} {b₁ : β a₁} {b₂ : β a₂}
-variables {s : _root_.sigma β}
-variables {l l₁ l₂ : list (_root_.sigma β)}
+variables {s : sigma β}
+variables {l l₁ l₂ : list (sigma β)}
 variables [decidable_eq α]
 
-def dict_lookup (a : α) : list (_root_.sigma β) → option (β a)
+def dict_lookup (a : α) : list (sigma β) → option (β a)
 | []            := none
 | (⟨a₂, b₂⟩::l) := if h : a₂ = a then some (h.rec_on b₂) else dict_lookup l
 
 section dict_lookup
 
-@[simp] theorem dict_lookup_nil : dict_lookup a ([] : list (_root_.sigma β)) = none :=
+@[simp] theorem dict_lookup_nil : dict_lookup a ([] : list (sigma β)) = none :=
 rfl
 
 theorem dict_lookup_cons : dict_lookup a₁ (⟨a₂, b₂⟩ :: l) = if h : a₂ = a₁ then some (h.rec_on b₂) else dict_lookup a₁ l :=
@@ -30,7 +30,7 @@ by simp [h]
 
 end dict_lookup
 
-def dict_mem (l : list (_root_.sigma β)) (a : α) : bool :=
+def dict_mem (l : list (sigma β)) (a : α) : bool :=
 (dict_lookup a l).is_some
 
 section dict_mem
@@ -38,7 +38,7 @@ section dict_mem
 theorem dict_mem_iff_find : dict_mem l a ↔ (dict_lookup a l).is_some :=
 iff.rfl
 
-@[simp] theorem dict_mem_nil : dict_mem ([] : list (_root_.sigma β)) a ↔ false :=
+@[simp] theorem dict_mem_nil : dict_mem ([] : list (sigma β)) a ↔ false :=
 by simp [dict_mem, option.is_some]
 
 @[simp] theorem dict_mem_cons : dict_mem (⟨a₂, b₂⟩ :: l) a₁ ↔ a₂ = a₁ ∨ dict_mem l a₁ :=
@@ -60,7 +60,7 @@ begin
   { cases hd, intro h, simp at h, cases h; simp [h, ih] }
 end
 
-instance decidable_dict_mem (a : α) : ∀ (l : list (_root_.sigma β)), decidable (dict_mem l a)
+instance decidable_dict_mem (a : α) : ∀ (l : list (sigma β)), decidable (dict_mem l a)
 | []            := is_false (by simp)
 | (⟨a₂, b₂⟩::l) :=
   if h : a₂ = a then
@@ -74,15 +74,15 @@ instance decidable_dict_mem (a : α) : ∀ (l : list (_root_.sigma β)), decidab
 
 end dict_mem
 
-def dict_insert (x : _root_.sigma β) (l : list (_root_.sigma β)) : list (_root_.sigma β) :=
+def dict_insert (x : sigma β) (l : list (sigma β)) : list (sigma β) :=
 if dict_mem l x.1 then l else x :: l
 
-def dict_keys : list (_root_.sigma β) → list α :=
+def dict_keys : list (sigma β) → list α :=
 map sigma.fst
 
 section dict_keys
 
-@[simp] theorem dict_keys_nil : dict_keys ([] : list (_root_.sigma β)) = [] :=
+@[simp] theorem dict_keys_nil : dict_keys ([] : list (sigma β)) = [] :=
 rfl
 
 @[simp] theorem dict_keys_cons : dict_keys (⟨a, b⟩ :: l) = a :: dict_keys l :=
@@ -94,7 +94,7 @@ rfl
 theorem dict_mem_iff_dict_keys : dict_mem l a ↔ a ∈ dict_keys l :=
 by induction l with hd tl ih; [simp, {cases hd, simp [eq_comm, ih]}]
 
-theorem dict_lookup_iff_mem {l : list (_root_.sigma β)} (nd : (dict_keys l).nodup) :
+theorem dict_lookup_iff_mem {l : list (sigma β)} (nd : (dict_keys l).nodup) :
   b ∈ dict_lookup a l ↔ sigma.mk a b ∈ l :=
 begin
   induction l generalizing a b,
