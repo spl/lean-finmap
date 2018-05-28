@@ -7,13 +7,13 @@ variables {α : Type u} {β : α → Type v}
 variables {a a₁ a₂ : α} {b : β a} {b₁ : β a₁} {b₂ : β a₂}
 variables {s : sigma β}
 variables {l l₁ l₂ : list (sigma β)}
-variables [decidable_eq α]
 
-def dict_lookup (a : α) : list (sigma β) → option (β a)
+def dict_lookup [decidable_eq α] (a : α) : list (sigma β) → option (β a)
 | []            := none
 | (⟨a₂, b₂⟩::l) := if h : a₂ = a then some (h.rec_on b₂) else dict_lookup l
 
 section dict_lookup
+variables [decidable_eq α]
 
 @[simp] theorem dict_lookup_nil : dict_lookup a ([] : list (sigma β)) = none :=
 rfl
@@ -32,10 +32,11 @@ by simp [h]
 
 end dict_lookup
 
-def dict_contains (l : list (sigma β)) (a : α) : bool :=
+def dict_contains [decidable_eq α] (l : list (sigma β)) (a : α) : bool :=
 (dict_lookup a l).is_some
 
 section dict_contains
+variables [decidable_eq α]
 
 theorem dict_contains_iff_find : l.dict_contains a ↔ (dict_lookup a l).is_some :=
 iff.rfl
@@ -76,7 +77,7 @@ instance decidable_dict_contains (a : α) : ∀ (l : list (sigma β)), decidable
 
 end dict_contains
 
-def dict_insert (x : sigma β) (l : list (sigma β)) : list (sigma β) :=
+def dict_insert [decidable_eq α] (x : sigma β) (l : list (sigma β)) : list (sigma β) :=
 if l.dict_contains x.1 then l else x :: l
 
 def nodup_keys : list (sigma β) → Prop := pairwise (sigma.on_fst (≠))
@@ -103,6 +104,8 @@ rfl
 @[simp] theorem dict_keys_singleton : [sigma.mk a b].dict_keys = [a] :=
 rfl
 
+variables [decidable_eq α]
+
 theorem dict_contains_iff_dict_keys : l.dict_contains a ↔ a ∈ l.dict_keys :=
 by induction l with hd tl ih; [simp, {cases hd, simp [eq_comm, ih]}]
 
@@ -116,7 +119,8 @@ begin
     split,
     { intro h,
       simp [decidable.not_or_iff_and_not] at h ⊢,
-      exact ⟨h a₂ b₂ (or.inl ⟨rfl, heq.rfl⟩), ih.mp (λ a₃ b₃, h a₃ b₃ ∘ or.inr)⟩ },
+      exact ⟨h a₂ b₂ (or.inl ⟨rfl, heq.rfl⟩), ih.mp (λ a₃ b₃, h a₃ b₃ ∘ or.inr)⟩
+    },
     { intros h₁ a₃ b₃ h₂,
       simp [decidable.not_or_iff_and_not] at h₁ h₂,
       cases h₂ with h₂ h₂,
@@ -161,6 +165,8 @@ pairwise.imp $ λ ⟨a₁, b₁⟩ ⟨a₂, b₂⟩ (h : a₁ ≠ a₂), by simp
 
 theorem perm_nodup_keys (h : l₁ ~ l₂) : l₁.nodup_keys ↔ l₂.nodup_keys :=
 perm_pairwise (@sigma.on_fst.symm α β (≠) (@ne.symm α)) h
+
+variables [decidable_eq α]
 
 theorem perm_dict_lookup
 (nd₁ : l₁.nodup_keys) (nd₂ : l₂.nodup_keys) (h : l₁ ~ l₂) :
