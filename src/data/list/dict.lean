@@ -8,6 +8,30 @@ variables {a a₁ a₂ : α} {b : β a} {b₁ : β a₁} {b₂ : β a₂}
 variables {s : sigma β}
 variables {l l₁ l₂ : list (sigma β)}
 
+def dict_lookups [decidable_eq α] (a : α) : list (sigma β) → list (β a)
+| []            := []
+| (⟨a₂, b₂⟩::l) := if h : a₂ = a then h.rec_on b₂ :: dict_lookups l else dict_lookups l
+
+section dict_lookups
+variables [decidable_eq α]
+
+@[simp] theorem dict_lookups_nil : dict_lookups a ([] : list (sigma β)) = [] :=
+rfl
+
+theorem dict_lookups_cons :
+  dict_lookups a₁ (sigma.mk a₂ b₂ :: l) = if h : a₂ = a₁ then h.rec_on b₂ :: dict_lookups a₁ l else dict_lookups a₁ l :=
+rfl
+
+local attribute [simp] dict_lookups_cons
+
+@[simp] theorem dict_lookups_cons_eq (h : a₂ = a₁) : dict_lookups a₁ (sigma.mk a₂ b₂ :: l) = h.rec_on b₂ :: dict_lookups a₁ l :=
+by simp [h]
+
+@[simp] theorem dict_lookups_cons_ne (h : a₂ ≠ a₁) : dict_lookups a₁ (sigma.mk a₂ b₂ :: l) = dict_lookups a₁ l :=
+by simp [h]
+
+end dict_lookups
+
 def dict_lookup [decidable_eq α] (a : α) : list (sigma β) → option (β a)
 | []            := none
 | (⟨a₂, b₂⟩::l) := if h : a₂ = a then some (h.rec_on b₂) else dict_lookup l
@@ -24,7 +48,7 @@ rfl
 
 local attribute [simp] dict_lookup_cons
 
-@[simp] theorem dict_lookup_cons_eq (h : a₂ = a₁) : b₁ ∈ dict_lookup a₁ (sigma.mk a₂ b₂ :: l) ↔ b₁ = h.rec_on b₂ :=
+@[simp] theorem dict_lookup_cons_eq (h : a₂ = a₁) : dict_lookup a₁ (sigma.mk a₂ b₂ :: l) = some (h.rec_on b₂) :=
 by simp [h, eq_comm]
 
 @[simp] theorem dict_lookup_cons_ne (h : a₂ ≠ a₁) : dict_lookup a₁ (sigma.mk a₂ b₂ :: l) = dict_lookup a₁ l :=
@@ -163,14 +187,53 @@ end dict_keys
 theorem nodup_of_nodup_keys {l : list (sigma β)} : l.nodup_keys → l.nodup :=
 pairwise.imp $ λ ⟨a₁, b₁⟩ ⟨a₂, b₂⟩ (h : a₁ ≠ a₂), by simp [h]
 
-theorem perm_nodup_keys (h : l₁ ~ l₂) : l₁.nodup_keys ↔ l₂.nodup_keys :=
-perm_pairwise (@sigma.on_fst.symm α β (≠) (@ne.symm α)) h
+theorem perm_nodup_keys (p : l₁ ~ l₂) : l₁.nodup_keys ↔ l₂.nodup_keys :=
+perm_pairwise (@sigma.on_fst.symm α β (≠) (@ne.symm α)) p
 
 variables [decidable_eq α]
 
-theorem perm_dict_lookup
-(nd₁ : l₁.nodup_keys) (nd₂ : l₂.nodup_keys) (h : l₁ ~ l₂) :
-  b ∈ l₁.dict_lookup a ↔ b ∈ l₂.dict_lookup a :=
-by simp [dict_lookup_iff_mem nd₁, dict_lookup_iff_mem nd₂, mem_of_perm h]
+theorem perm_dict_lookups (a : α) (p : l₁ ~ l₂) :
+  l₁.dict_lookups a ~ l₂.dict_lookups a :=
+begin
+  induction p,
+  case list.perm.nil { refl },
+  case list.perm.skip : s₁ l₁ l₂ p ih {
+    cases s₁ with a₁ b₁,
+    by_cases h : a₁ = a; simp [h, ih, perm.skip]
+  },
+  case list.perm.swap : s₁ s₂ l {
+    cases s₁ with a₁ b₁,
+    cases s₂ with a₂ b₂,
+    by_cases h₁ : a₁ = a; by_cases h₂ : a₂ = a; simp [h₁, h₂, perm.swap]
+  },
+  case list.perm.trans : l₁ l₂ l₃ p₁₂ p₂₃ ih₁₂ ih₂₃ {
+    exact perm.trans ih₁₂ ih₂₃
+  }
+end
+
+theorem dict_lookup_eq_of_perm (a : α) (nd₁ : l₁.nodup_keys) (nd₂ : l₂.nodup_keys)
+  (p : l₁ ~ l₂) : l₁.dict_lookup a = l₂.dict_lookup a :=
+begin
+  induction p,
+  case list.perm.nil { refl },
+  case list.perm.skip : s₁ l₁ l₂ p ih nd₁ nd₂ {
+    cases s₁ with a₁ b₁,
+    by_cases h : a₁ = a,
+    { simp [h] },
+    { simp at nd₁ nd₂, simp [h, ih nd₁.2 nd₂.2] }
+  },
+  case list.perm.swap : s₁ s₂ l nd₂₁ nd₁₂ {
+    cases s₁ with a₁ b₁,
+    cases s₂ with a₂ b₂,
+    simp [and.assoc] at nd₂₁ nd₁₂,
+    by_cases h₂ : a₂ = a,
+    { induction h₂, simp [eq.refl a₁, nd₁₂.1] },
+    { by_cases h₁ : a₁ = a; simp [h₂, h₁] }
+  },
+  case list.perm.trans : l₁ l₂ l₃ p₁₂ p₂₃ ih₁₂ ih₂₃ nd₁ nd₃ {
+    have nd₂ : l₂.nodup_keys := (perm_nodup_keys p₁₂).mp nd₁,
+    exact eq.trans (ih₁₂ nd₁ nd₂) (ih₂₃ nd₂ nd₃)
+  }
+end
 
 end list
