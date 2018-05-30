@@ -5,7 +5,7 @@ namespace list
 universes u v
 variables {α : Type u} {β : α → Type v}
 variables {a a₁ a₂ : α} {b : β a} {b₁ : β a₁} {b₂ : β a₂}
-variables {s : sigma β}
+variables {s s₁ s₂ : sigma β}
 variables {l l₁ l₂ : list (sigma β)}
 
 def dict_lookups [decidable_eq α] (a : α) : list (sigma β) → list (β a)
@@ -101,8 +101,21 @@ instance decidable_dict_contains (a : α) : ∀ (l : list (sigma β)), decidable
 
 end dict_contains
 
-def dict_insert [decidable_eq α] (x : sigma β) (l : list (sigma β)) : list (sigma β) :=
-if l.dict_contains x.1 then l else x :: l
+def dict_insert [decidable_eq α] (s : sigma β) (l : list (sigma β)) : list (sigma β) :=
+if l.dict_contains s.1 then l else s :: l
+
+section dict_insert
+variables [decidable_eq α]
+
+local attribute [simp] dict_insert
+
+@[simp] theorem dict_insert_of_dict_contains (h : l.dict_contains s.1) : l.dict_insert s = l :=
+by simp [h]
+
+@[simp] theorem dict_insert_of_not_dict_contains (h : ¬ l.dict_contains s.1) : l.dict_insert s = s :: l :=
+by simp [h]
+
+end dict_insert
 
 def nodup_keys : list (sigma β) → Prop := pairwise (sigma.on_fst (≠))
 
@@ -115,10 +128,31 @@ pairwise.nil _
   nodup_keys (s :: l) ↔ (∀ (s' : sigma β), s' ∈ l → s.1 ≠ s'.1) ∧ nodup_keys l :=
 by simp [nodup_keys, sigma.on_fst]
 
-theorem nodup_keys_dict_insert [decidable_eq α] {l : list (sigma β)} (s : sigma β) :
-  nodup_keys (l.dict_insert s) ↔ (¬ l.dict_contains s.1 → ∀ (s' : sigma β), s' ∈ l → s.1 ≠ s'.1) ∧ nodup_keys l :=
-by by_cases h : ↥(l.dict_contains s.1);
-   simp [nodup_keys, dict_insert, sigma.on_fst, h] {contextual := tt}
+theorem perm_nodup_keys (p : l₁ ~ l₂) : l₁.nodup_keys ↔ l₂.nodup_keys :=
+perm_pairwise (@sigma.on_fst.symm α β (≠) (@ne.symm α)) p
+
+@[simp] theorem nodup_keys_cons_of_not_dict_contains [decidable_eq α]
+{l : list (sigma β)} (s : sigma β) (h : ¬ l.dict_contains s.1) :
+  nodup_keys (s :: l) ↔ nodup_keys l :=
+begin
+  induction l,
+  case list.nil { simp },
+  case list.cons : hd tl ih {
+    cases hd with a b,
+    rw [dict_contains_cons, decidable.not_or_iff_and_not] at h,
+    rw [perm_nodup_keys (perm.swap ⟨a, b⟩ s tl), nodup_keys_cons, ih h.2, nodup_keys_cons],
+    simp [h.1]
+  }
+end
+
+@[simp] theorem nodup_keys_dict_insert [decidable_eq α]
+{l : list (sigma β)} (s : sigma β) :
+  nodup_keys (l.dict_insert s) ↔ nodup_keys l :=
+begin
+  by_cases h : ↥(l.dict_contains s.1),
+  { simp [nodup_keys, dict_insert, h] },
+  { rw [dict_insert_of_not_dict_contains h, nodup_keys_cons_of_not_dict_contains s h] }
+end
 
 end nodup_keys
 
@@ -194,9 +228,6 @@ end dict_keys
 
 theorem nodup_of_nodup_keys {l : list (sigma β)} : l.nodup_keys → l.nodup :=
 pairwise.imp $ λ ⟨a₁, b₁⟩ ⟨a₂, b₂⟩ (h : a₁ ≠ a₂), by simp [h]
-
-theorem perm_nodup_keys (p : l₁ ~ l₂) : l₁.nodup_keys ↔ l₂.nodup_keys :=
-perm_pairwise (@sigma.on_fst.symm α β (≠) (@ne.symm α)) p
 
 variables [decidable_eq α]
 

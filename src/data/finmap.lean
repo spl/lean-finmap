@@ -37,6 +37,9 @@ instance has_mem [decidable_eq α] : has_mem α (finmap α β) :=
 def dom [decidable_eq α] (f : finmap α β) : finset α :=
 f.val.dict_keys.to_finset
 
+def insert [decidable_eq α] (s : sigma β) (f : finmap α β) : finmap α β :=
+⟨f.val.dict_insert s, by simp [f.nodup_keys]⟩
+
 def perm (f : finmap α β) (g : finmap α β) : Prop :=
 list.perm f.1 g.1
 
