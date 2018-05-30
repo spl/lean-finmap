@@ -108,9 +108,17 @@ def nodup_keys : list (sigma β) → Prop := pairwise (sigma.on_fst (≠))
 
 section nodup_keys
 
+@[simp] theorem nodup_keys_nil : @nodup_keys α β [] :=
+pairwise.nil _
+
 @[simp] theorem nodup_keys_cons {l : list (sigma β)} :
   nodup_keys (s :: l) ↔ (∀ (s' : sigma β), s' ∈ l → s.1 ≠ s'.1) ∧ nodup_keys l :=
 by simp [nodup_keys, sigma.on_fst]
+
+theorem nodup_keys_dict_insert [decidable_eq α] {l : list (sigma β)} (s : sigma β) :
+  nodup_keys (l.dict_insert s) ↔ (¬ l.dict_contains s.1 → ∀ (s' : sigma β), s' ∈ l → s.1 ≠ s'.1) ∧ nodup_keys l :=
+by by_cases h : ↥(l.dict_contains s.1);
+   simp [nodup_keys, dict_insert, sigma.on_fst, h] {contextual := tt}
 
 end nodup_keys
 
