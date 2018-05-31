@@ -10,7 +10,7 @@ variables {l l₁ l₂ : list (sigma β)}
 
 def dict_lookup_all [decidable_eq α] (a : α) : list (sigma β) → list (β a)
 | []     := []
-| (s::l) := if h : s.1 = a then h.rec_on s.2 :: dict_lookup_all l else dict_lookup_all l
+| (s::l) := let l' := dict_lookup_all l in if h : s.1 = a then h.rec_on s.2 :: l' else l'
 
 section dict_lookup_all
 variables [decidable_eq α]
@@ -105,6 +105,53 @@ by simp [h]
 
 end dict_insert
 
+def dict_erase [decidable_eq α] (a : α) : list (sigma β) → list (sigma β)
+| []     := []
+| (s::l) := if h : s.1 = a then l else s :: dict_erase l
+
+section dict_erase
+variables [decidable_eq α]
+
+@[simp] theorem dict_erase_nil : @dict_erase _ β _ a [] = [] :=
+rfl
+
+@[simp] theorem dict_erase_cons_eq (h : s.1 = a) : dict_erase a (s :: l) = l :=
+by simp [dict_erase, h]
+
+@[simp] theorem dict_erase_cons_ne (h : s.1 ≠ a) : dict_erase a (s :: l) = s :: dict_erase a l :=
+by simp [dict_erase, h]
+
+theorem mem_of_mem_dict_erase : s ∈ dict_erase a l → s ∈ l :=
+begin
+  induction l,
+  case list.nil { simp },
+  case list.cons : hd tl ih {
+    by_cases h : hd.1 = a,
+    { simp [h] {contextual := tt} },
+    { intro p, simp [h] at p, cases p with p p; simp [p, ih] }
+  }
+end
+
+end dict_erase
+
+def dict_erase_all [decidable_eq α] (a : α) : list (sigma β) → list (sigma β)
+| []     := []
+| (s::l) := let l' := dict_erase_all l in if h : s.1 = a then l' else s :: l'
+
+section dict_erase_all
+variables [decidable_eq α]
+
+@[simp] theorem dict_erase_all_nil : @dict_erase_all _ β _ a [] = [] :=
+rfl
+
+@[simp] theorem dict_erase_all_cons_eq (h : s.1 = a) : dict_erase_all a (s :: l) = dict_erase_all a l :=
+by simp [dict_erase_all, h]
+
+@[simp] theorem dict_erase_all_cons_ne (h : s.1 ≠ a) : dict_erase_all a (s :: l) = s :: dict_erase_all a l :=
+by simp [dict_erase_all, h]
+
+end dict_erase_all
+
 def nodup_keys : list (sigma β) → Prop := pairwise (sigma.on_fst (≠))
 
 section nodup_keys
@@ -112,16 +159,16 @@ section nodup_keys
 @[simp] theorem nodup_keys_nil : @nodup_keys α β [] :=
 pairwise.nil _
 
-@[simp] theorem nodup_keys_cons {l : list (sigma β)} :
-  nodup_keys (s :: l) ↔ (∀ (s₁ : sigma β), s₁ ∈ l → s.1 ≠ s₁.1) ∧ nodup_keys l :=
+@[simp] theorem nodup_keys_cons :
+  (s :: l).nodup_keys ↔ (∀ (s₁ : sigma β), s₁ ∈ l → s.1 ≠ s₁.1) ∧ l.nodup_keys :=
 by simp [nodup_keys, sigma.on_fst]
 
 theorem perm_nodup_keys (p : l₁ ~ l₂) : l₁.nodup_keys ↔ l₂.nodup_keys :=
 perm_pairwise (@sigma.on_fst.symm α β (≠) (@ne.symm α)) p
 
 @[simp] theorem nodup_keys_cons_of_not_dict_contains [decidable_eq α]
-{l : list (sigma β)} (s : sigma β) (h : ¬ l.dict_contains s.1) :
-  nodup_keys (s :: l) ↔ nodup_keys l :=
+(s : sigma β) (h : ¬ l.dict_contains s.1) :
+  (s :: l).nodup_keys ↔ l.nodup_keys :=
 begin
   induction l,
   case list.nil { simp },
@@ -133,13 +180,28 @@ begin
   }
 end
 
-@[simp] theorem nodup_keys_dict_insert [decidable_eq α]
-{l : list (sigma β)} (s : sigma β) :
-  nodup_keys (l.dict_insert s) ↔ nodup_keys l :=
+@[simp] theorem nodup_keys_dict_insert [decidable_eq α] (s : sigma β) :
+  (l.dict_insert s).nodup_keys ↔ l.nodup_keys  :=
 begin
   by_cases h : ↥(l.dict_contains s.1),
   { simp [nodup_keys, dict_insert, h] },
   { rw [dict_insert_of_not_dict_contains h, nodup_keys_cons_of_not_dict_contains s h] }
+end
+
+@[simp] theorem nodup_keys_dict_erase [decidable_eq α] (a : α) :
+  l.nodup_keys → (l.dict_erase a).nodup_keys :=
+begin
+  induction l,
+  case list.nil { simp },
+  case list.cons : hd tl ih {
+    intro nd, rw nodup_keys_cons at nd,
+    by_cases h : hd.1 = a,
+    { simp [h, nd.2] },
+    { rw [dict_erase_cons_ne h, nodup_keys_cons],
+      split,
+      { intros s p, exact nd.1 s (mem_of_mem_dict_erase p) },
+      { exact ih nd.2 } }
+  }
 end
 
 end nodup_keys
@@ -171,8 +233,7 @@ begin
   case list.cons : hd tl ih { simp [decidable.not_or_iff_and_not, ih] }
 end
 
-theorem dict_lookup_iff_mem {l : list (sigma β)} (nd : l.nodup_keys) :
-  s.2 ∈ l.dict_lookup s.1 ↔ s ∈ l :=
+theorem dict_lookup_iff_mem (nd : l.nodup_keys) : s.2 ∈ l.dict_lookup s.1 ↔ s ∈ l :=
 begin
   induction l generalizing s,
   case list.nil { simp },
@@ -204,7 +265,7 @@ end
 
 end dict_keys
 
-theorem nodup_of_nodup_keys {l : list (sigma β)} : l.nodup_keys → l.nodup :=
+theorem nodup_of_nodup_keys : l.nodup_keys → l.nodup :=
 pairwise.imp $ λ ⟨a₁, b₁⟩ ⟨a₂, b₂⟩ (h : a₁ ≠ a₂), by simp [h]
 
 variables [decidable_eq α]
@@ -214,22 +275,19 @@ theorem perm_dict_lookup_all (a : α) (p : l₁ ~ l₂) :
 begin
   induction p,
   case list.perm.nil { refl },
-  case list.perm.skip : s₁ l₁ l₂ p ih {
-    cases s₁ with a₁ b₁,
-    by_cases h : a₁ = a; simp [h, ih, perm.skip]
+  case list.perm.skip : s l₁ l₂ p ih {
+    by_cases h : s.1 = a; simp [h, ih, perm.skip]
   },
   case list.perm.swap : s₁ s₂ l {
-    cases s₁ with a₁ b₁,
-    cases s₂ with a₂ b₂,
-    by_cases h₁ : a₁ = a; by_cases h₂ : a₂ = a; simp [h₁, h₂, perm.swap]
+    by_cases h₁ : s₁.1 = a; by_cases h₂ : s₂.1 = a; simp [h₁, h₂, perm.swap]
   },
   case list.perm.trans : l₁ l₂ l₃ p₁₂ p₂₃ ih₁₂ ih₂₃ {
     exact perm.trans ih₁₂ ih₂₃
   }
 end
 
-theorem dict_lookup_eq_of_perm (a : α) (nd₁ : l₁.nodup_keys) (nd₂ : l₂.nodup_keys)
-  (p : l₁ ~ l₂) : l₁.dict_lookup a = l₂.dict_lookup a :=
+theorem dict_lookup_eq_of_perm (a : α) (nd₁ : l₁.nodup_keys) (nd₂ : l₂.nodup_keys) (p : l₁ ~ l₂) :
+  l₁.dict_lookup a = l₂.dict_lookup a :=
 begin
   induction p,
   case list.perm.nil { refl },
@@ -244,7 +302,7 @@ begin
     cases s₂ with a₂ b₂,
     simp [and.assoc] at nd₂₁ nd₁₂,
     by_cases h₂ : a₂ = a,
-    { induction h₂, simp [eq.refl a₁, nd₁₂.1] },
+    { induction h₂, simp [nd₁₂.1] },
     { by_cases h₁ : a₁ = a; simp [h₂, h₁] }
   },
   case list.perm.trans : l₁ l₂ l₃ p₁₂ p₂₃ ih₁₂ ih₂₃ nd₁ nd₃ {
@@ -253,8 +311,8 @@ begin
   }
 end
 
-theorem dict_keys_eq_of_perm (nd₁ : l₁.nodup_keys) (nd₂ : l₂.nodup_keys)
-  (p : l₁ ~ l₂) : l₁.dict_keys ~ l₂.dict_keys :=
+theorem dict_keys_eq_of_perm (nd₁ : l₁.nodup_keys) (nd₂ : l₂.nodup_keys) (p : l₁ ~ l₂) :
+  l₁.dict_keys ~ l₂.dict_keys :=
 begin
   induction p,
   case list.perm.nil { refl },
@@ -268,6 +326,45 @@ begin
   case list.perm.trans : l₁ l₂ l₃ p₁₂ p₂₃ ih₁₂ ih₂₃ nd₁ nd₃ {
     have nd₂ : l₂.nodup_keys := (perm_nodup_keys p₁₂).mp nd₁,
     exact perm.trans (ih₁₂ nd₁ nd₂) (ih₂₃ nd₂ nd₃)
+  }
+end
+
+theorem perm_dict_erase (a : α) (nd₁ : l₁.nodup_keys) (nd₂ : l₂.nodup_keys) (p : l₁ ~ l₂) :
+  l₁.dict_erase a ~ l₂.dict_erase a :=
+begin
+  induction p,
+  case list.perm.nil { refl },
+  case list.perm.skip : s l₁ l₂ p ih {
+    simp at nd₁ nd₂,
+    by_cases h : s.1 = a; simp [p, h, ih nd₁.2 nd₂.2, perm.skip]
+  },
+  case list.perm.swap : s₁ s₂ l nd₂₁ nd₁₂ {
+    cases s₁ with a₁ b₁,
+    cases s₂ with a₂ b₂,
+    simp [and.assoc] at nd₁₂,
+    by_cases h₂ : a₂ = a,
+    { induction h₂, simp [nd₁₂.1] },
+    { by_cases h₁ : a₁ = a; simp [h₂, h₁, perm.swap] }
+  },
+  case list.perm.trans : l₁ l₂ l₃ p₁₂ p₂₃ ih₁₂ ih₂₃ nd₁ nd₃ {
+    have nd₂ : l₂.nodup_keys := (perm_nodup_keys p₁₂).mp nd₁,
+    exact perm.trans (ih₁₂ nd₁ nd₂) (ih₂₃ nd₂ nd₃)
+  }
+end
+
+theorem perm_dict_erase_all (a : α) (p : l₁ ~ l₂) :
+  l₁.dict_erase_all a ~ l₂.dict_erase_all a :=
+begin
+  induction p,
+  case list.perm.nil { refl },
+  case list.perm.skip : s l₁ l₂ p ih {
+    by_cases h : s.1 = a; simp [h, ih, perm.skip]
+  },
+  case list.perm.swap : s₁ s₂ l {
+    by_cases h₁ : s₁.1 = a; by_cases h₂ : s₂.1 = a; simp [h₁, h₂, perm.swap]
+  },
+  case list.perm.trans : l₁ l₂ l₃ p₁₂ p₂₃ ih₁₂ ih₂₃ {
+    exact perm.trans ih₁₂ ih₂₃
   }
 end
 
