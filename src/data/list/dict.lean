@@ -8,50 +8,42 @@ variables {a a₁ a₂ : α} {b : β a} {b₁ : β a₁} {b₂ : β a₂}
 variables {s s₁ s₂ : sigma β}
 variables {l l₁ l₂ : list (sigma β)}
 
-def dict_lookups [decidable_eq α] (a : α) : list (sigma β) → list (β a)
-| []            := []
-| (⟨a₂, b₂⟩::l) := if h : a₂ = a then h.rec_on b₂ :: dict_lookups l else dict_lookups l
+def dict_lookup_all [decidable_eq α] (a : α) : list (sigma β) → list (β a)
+| []     := []
+| (s::l) := if h : s.1 = a then h.rec_on s.2 :: dict_lookup_all l else dict_lookup_all l
 
-section dict_lookups
+section dict_lookup_all
 variables [decidable_eq α]
 
-@[simp] theorem dict_lookups_nil : dict_lookups a ([] : list (sigma β)) = [] :=
+@[simp] theorem dict_lookup_all_nil : @dict_lookup_all _ β _ a [] = [] :=
 rfl
 
-theorem dict_lookups_cons :
-  dict_lookups a₁ (sigma.mk a₂ b₂ :: l) = if h : a₂ = a₁ then h.rec_on b₂ :: dict_lookups a₁ l else dict_lookups a₁ l :=
-rfl
+local attribute [simp] dict_lookup_all
 
-local attribute [simp] dict_lookups_cons
-
-@[simp] theorem dict_lookups_cons_eq (h : a₂ = a₁) : dict_lookups a₁ (sigma.mk a₂ b₂ :: l) = h.rec_on b₂ :: dict_lookups a₁ l :=
+@[simp] theorem dict_lookup_all_cons_eq (h : s.1 = a) : dict_lookup_all a (s :: l) = h.rec_on s.2 :: dict_lookup_all a l :=
 by simp [h]
 
-@[simp] theorem dict_lookups_cons_ne (h : a₂ ≠ a₁) : dict_lookups a₁ (sigma.mk a₂ b₂ :: l) = dict_lookups a₁ l :=
+@[simp] theorem dict_lookup_all_cons_ne (h : s.1 ≠ a) : dict_lookup_all a (s :: l) = dict_lookup_all a l :=
 by simp [h]
 
-end dict_lookups
+end dict_lookup_all
 
 def dict_lookup [decidable_eq α] (a : α) : list (sigma β) → option (β a)
-| []            := none
-| (⟨a₂, b₂⟩::l) := if h : a₂ = a then some (h.rec_on b₂) else dict_lookup l
+| []     := none
+| (s::l) := if h : s.1 = a then some (h.rec_on s.2) else dict_lookup l
 
 section dict_lookup
 variables [decidable_eq α]
 
-@[simp] theorem dict_lookup_nil : dict_lookup a ([] : list (sigma β)) = none :=
+@[simp] theorem dict_lookup_nil : @dict_lookup _ β _ a [] = none :=
 rfl
 
-theorem dict_lookup_cons :
-  dict_lookup a₁ (sigma.mk a₂ b₂ :: l) = if h : a₂ = a₁ then some (h.rec_on b₂) else dict_lookup a₁ l :=
-rfl
+local attribute [simp] dict_lookup
 
-local attribute [simp] dict_lookup_cons
+@[simp] theorem dict_lookup_cons_eq (h : s.1 = a) : dict_lookup a (s :: l) = some (h.rec_on s.2) :=
+by simp [h]
 
-@[simp] theorem dict_lookup_cons_eq (h : a₂ = a₁) : dict_lookup a₁ (sigma.mk a₂ b₂ :: l) = some (h.rec_on b₂) :=
-by simp [h, eq_comm]
-
-@[simp] theorem dict_lookup_cons_ne (h : a₂ ≠ a₁) : dict_lookup a₁ (sigma.mk a₂ b₂ :: l) = dict_lookup a₁ l :=
+@[simp] theorem dict_lookup_cons_ne (h : s.1 ≠ a) : dict_lookup a (s :: l) = dict_lookup a l :=
 by simp [h]
 
 end dict_lookup
@@ -62,25 +54,22 @@ def dict_contains [decidable_eq α] (l : list (sigma β)) (a : α) : bool :=
 section dict_contains
 variables [decidable_eq α]
 
-theorem dict_contains_iff_find : l.dict_contains a ↔ (dict_lookup a l).is_some :=
-iff.rfl
-
-@[simp] theorem dict_contains_nil : ([] : list (sigma β)).dict_contains a ↔ false :=
+@[simp] theorem dict_contains_nil : @dict_contains _ β _ [] a = ff :=
 by simp [dict_contains, option.is_some]
 
-@[simp] theorem dict_contains_cons : (sigma.mk a₂ b₂ :: l).dict_contains a₁ ↔ a₂ = a₁ ∨ l.dict_contains a₁ :=
-by by_cases h : a₂ = a₁; simp [h, dict_contains, dict_lookup, option.is_some]
+@[simp] theorem dict_contains_cons : (s :: l).dict_contains a ↔ s.1 = a ∨ l.dict_contains a :=
+by by_cases h : s.1 = a; simp [dict_contains, option.is_some, h]
 
-@[simp] theorem dict_contains_cons_eq (h : a₂ = a₁) : (sigma.mk a₂ b₂ :: l).dict_contains a₁ :=
+@[simp] theorem dict_contains_cons_eq (h : s.1 = a) : (s :: l).dict_contains a :=
 by simp [h]
 
-@[simp] theorem dict_contains_cons_ne (h : a₂ ≠ a₁) : (sigma.mk a₂ b₂ :: l).dict_contains a₁ ↔ l.dict_contains a₁ :=
-by simp [h]
+@[simp] theorem dict_contains_cons_ne (h : s.1 ≠ a) : (s :: l).dict_contains a = l.dict_contains a :=
+by simp [dict_contains, h]
 
-@[simp] theorem dict_contains_singleton : [sigma.mk a₂ b₂].dict_contains a₁ ↔ a₂ = a₁ :=
+@[simp] theorem dict_contains_singleton : [s].dict_contains a ↔ s.1 = a :=
 by simp
 
-theorem dict_contains_of_mem : sigma.mk a b ∈ l → l.dict_contains a :=
+theorem dict_contains_of_mem : s ∈ l → l.dict_contains s.1 :=
 begin
   induction l with hd tl ih,
   { simp },
@@ -89,14 +78,13 @@ end
 
 instance decidable_dict_contains (a : α) : ∀ (l : list (sigma β)), decidable (l.dict_contains a)
 | []            := is_false (by simp)
-| (⟨a₂, b₂⟩::l) :=
-  if h : a₂ = a then
-    is_true $ dict_contains_cons_eq h
+| (⟨a₁, b₁⟩::l) :=
+  if ha : a₁ = a then
+    is_true $ dict_contains_cons_eq ha
   else
-    have p : (sigma.mk a₂ b₂ :: l).dict_contains a ↔ l.dict_contains a := dict_contains_cons_ne h,
     match decidable_dict_contains l with
-    | is_true  h := is_true $ p.mpr h
-    | is_false h := is_false $ (not_iff_not_of_iff p).mpr h
+    | is_true  hl := is_true $ by simp [hl]
+    | is_false hl := is_false $ by simp [ha, hl]
     end
 
 end dict_contains
@@ -125,7 +113,7 @@ section nodup_keys
 pairwise.nil _
 
 @[simp] theorem nodup_keys_cons {l : list (sigma β)} :
-  nodup_keys (s :: l) ↔ (∀ (s' : sigma β), s' ∈ l → s.1 ≠ s'.1) ∧ nodup_keys l :=
+  nodup_keys (s :: l) ↔ (∀ (s₁ : sigma β), s₁ ∈ l → s.1 ≠ s₁.1) ∧ nodup_keys l :=
 by simp [nodup_keys, sigma.on_fst]
 
 theorem perm_nodup_keys (p : l₁ ~ l₂) : l₁.nodup_keys ↔ l₂.nodup_keys :=
@@ -167,7 +155,7 @@ rfl
 @[simp] theorem dict_keys_cons : (s :: l).dict_keys = s.1 :: l.dict_keys :=
 rfl
 
-@[simp] theorem dict_keys_singleton : [sigma.mk a b].dict_keys = [a] :=
+@[simp] theorem dict_keys_singleton : [s].dict_keys = [s.1] :=
 rfl
 
 variables [decidable_eq α]
@@ -176,50 +164,40 @@ theorem dict_contains_iff_dict_keys : l.dict_contains a ↔ a ∈ l.dict_keys :=
 by induction l with hd tl ih; [simp, {cases hd, simp [eq_comm, ih]}]
 
 @[simp] theorem dict_keys_iff_ne_key_of_mem :
-  (∀ (a₁ : α) (b₁ : β a₁), sigma.mk a₁ b₁ ∈ l → a ≠ a₁) ↔ a ∉ dict_keys l :=
+  (∀ (s : sigma β), s ∈ l → a ≠ s.1) ↔ a ∉ dict_keys l :=
 begin
   induction l,
   case list.nil { simp },
-  case list.cons : hd tl ih {
-    cases hd with a₂ b₂,
-    split,
-    { intro h,
-      simp [decidable.not_or_iff_and_not] at h ⊢,
-      exact ⟨h a₂ b₂ (or.inl ⟨rfl, heq.rfl⟩), ih.mp (λ a₃ b₃, h a₃ b₃ ∘ or.inr)⟩
-    },
-    { intros h₁ a₃ b₃ h₂,
-      simp [decidable.not_or_iff_and_not] at h₁ h₂,
-      cases h₂ with h₂ h₂,
-      { rw h₂.1, exact h₁.1 },
-      { exact ih.mpr h₁.2 a₃ b₃ h₂ }
-      }
-  }
+  case list.cons : hd tl ih { simp [decidable.not_or_iff_and_not, ih] }
 end
 
 theorem dict_lookup_iff_mem {l : list (sigma β)} (nd : l.nodup_keys) :
-  b ∈ l.dict_lookup a ↔ sigma.mk a b ∈ l :=
+  s.2 ∈ l.dict_lookup s.1 ↔ s ∈ l :=
 begin
-  induction l generalizing a b,
+  induction l generalizing s,
   case list.nil { simp },
   case list.cons : hd tl ih {
-    cases hd with hd_a hd_b,
     simp at nd,
-    by_cases p : hd_a = a,
-    { induction p,
+    by_cases h : hd.1 = s.1,
+    { rw dict_lookup_cons_eq h,
+      cases s with a₁ b₁,
+      cases hd with a₂ b₂,
+      dsimp at h,
+      induction h,
       split,
       { simp {contextual := tt} },
-      { intro q,
-        simp at q,
-        cases q with q q,
-        { simp [q] },
-        { exact absurd (dict_contains_iff_dict_keys.mp (dict_contains_of_mem q)) nd.1 } } },
-    { rw [dict_lookup_cons_ne p, mem_cons_iff],
+      { intro h,
+        simp at h,
+        cases h with h h,
+        { simp [h] },
+        { exact absurd (dict_contains_iff_dict_keys.mp (dict_contains_of_mem h)) nd.1 } } },
+    { rw [dict_lookup_cons_ne h, mem_cons_iff],
       split,
       { exact or.inr ∘ (ih nd.2).mp },
-      { intro q,
-        cases q with q q,
-        { simp at q, exact absurd q.1.symm p },
-        { exact (ih nd.2).mpr q } }
+      { intro p,
+        cases p with p p,
+        { induction p, exact false.elim (ne.irrefl h) },
+        { exact (ih nd.2).mpr p } }
     }
   }
 end
@@ -231,8 +209,8 @@ pairwise.imp $ λ ⟨a₁, b₁⟩ ⟨a₂, b₂⟩ (h : a₁ ≠ a₂), by simp
 
 variables [decidable_eq α]
 
-theorem perm_dict_lookups (a : α) (p : l₁ ~ l₂) :
-  l₁.dict_lookups a ~ l₂.dict_lookups a :=
+theorem perm_dict_lookup_all (a : α) (p : l₁ ~ l₂) :
+  l₁.dict_lookup_all a ~ l₂.dict_lookup_all a :=
 begin
   induction p,
   case list.perm.nil { refl },

@@ -15,8 +15,8 @@ quot.induction_on s $ λ l, list.nodup_of_nodup_keys
 
 @[simp] theorem nodup_keys_zero : @nodup_keys α β 0 := pairwise.nil _
 
-def dict_lookups [decidable_eq α] (a : α) (s : multiset (sigma β)) : multiset (β a) :=
-quot.lift_on s (λ l, (l.dict_lookups a : multiset (β a)))
-               (λ l₁ l₂ p, quot.sound $ perm_dict_lookups a p)
+def dict_lookup [decidable_eq α] (a : α) (s : multiset (sigma β)) : multiset (β a) :=
+quot.lift_on s (λ l, (l.dict_lookup_all a : multiset (β a)))
+               (λ l₁ l₂ p, quot.sound $ perm_dict_lookup_all a p)
 
 end multiset
