@@ -164,7 +164,7 @@ section dict_keys
 @[simp] theorem dict_keys_nil : ([] : list (sigma β)).dict_keys = [] :=
 rfl
 
-@[simp] theorem dict_keys_cons : (sigma.mk a b :: l).dict_keys = a :: l.dict_keys :=
+@[simp] theorem dict_keys_cons : (s :: l).dict_keys = s.1 :: l.dict_keys :=
 rfl
 
 @[simp] theorem dict_keys_singleton : [sigma.mk a b].dict_keys = [a] :=
@@ -272,6 +272,24 @@ begin
   case list.perm.trans : l₁ l₂ l₃ p₁₂ p₂₃ ih₁₂ ih₂₃ nd₁ nd₃ {
     have nd₂ : l₂.nodup_keys := (perm_nodup_keys p₁₂).mp nd₁,
     exact eq.trans (ih₁₂ nd₁ nd₂) (ih₂₃ nd₂ nd₃)
+  }
+end
+
+theorem dict_keys_eq_of_perm (nd₁ : l₁.nodup_keys) (nd₂ : l₂.nodup_keys)
+  (p : l₁ ~ l₂) : l₁.dict_keys ~ l₂.dict_keys :=
+begin
+  induction p,
+  case list.perm.nil { refl },
+  case list.perm.skip : s₁ l₁ l₂ p ih {
+    simp at nd₁ nd₂,
+    simp [perm.skip s₁.1 (ih nd₁.2 nd₂.2)]
+  },
+  case list.perm.swap : s₁ s₂ l {
+    simp [perm.swap s₁.1 s₂.1 (dict_keys l)]
+  },
+  case list.perm.trans : l₁ l₂ l₃ p₁₂ p₂₃ ih₁₂ ih₂₃ nd₁ nd₃ {
+    have nd₂ : l₂.nodup_keys := (perm_nodup_keys p₁₂).mp nd₁,
+    exact perm.trans (ih₁₂ nd₁ nd₂) (ih₂₃ nd₂ nd₃)
   }
 end
 
