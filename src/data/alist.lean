@@ -21,12 +21,12 @@ instance [decidable_eq α] [∀ a, decidable_eq (β a)] : decidable_eq (alist α
 instance : has_emptyc (alist α β) := ⟨⟨∅, list.nodup_keys_nil⟩⟩
 
 def lookup [decidable_eq α] (a : α) (l : alist α β) : option (β a) :=
-list.dict_lookup a l.val
+l.val.dict_lookup a
 
 def contains [decidable_eq α] (l : alist α β) (a : α) : bool :=
 (l.lookup a).is_some
 
-instance has_mem [decidable_eq α] : has_mem α (alist α β) :=
+instance [decidable_eq α] : has_mem α (alist α β) :=
 ⟨λ a l, l.contains a⟩
 
 def keys [decidable_eq α] (l : alist α β) : finset α :=
@@ -52,6 +52,10 @@ mk_equivalence (@perm α β) (@perm.refl α β) (@perm.symm α β) (@perm.trans 
 
 instance (α : Type u) (β : α → Type v) : setoid (alist α β) :=
 setoid.mk (@perm α β) (perm.equivalence α β)
+
+instance decidable_perm [decidable_eq α] [∀ a, decidable_eq (β a)] (l₁ l₂ : alist α β) :
+  decidable (perm l₁ l₂) :=
+list.decidable_perm l₁.val l₂.val
 
 theorem perm_of_keys [decidable_eq α] {l₁ l₂ : alist α β} (p : perm l₁ l₂) :
   alist.keys l₁ = alist.keys l₂ :=
