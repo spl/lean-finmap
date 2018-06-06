@@ -10,7 +10,7 @@ variables {α : Type u} {β : α → Type v}
 
 instance [decidable_eq α] [∀ a, decidable_eq (β a)] : decidable_eq (finmap α β)
 | f g := quotient.rec_on_subsingleton₂ f g $
-  λ l₁ l₂, decidable_of_iff' _ quotient.eq
+  λ _ _, decidable_of_iff' _ quotient.eq
 
 def lookup [decidable_eq α] (a : α) (f : finmap α β) : option (β a) :=
 quot.lift_on f (alist.lookup a) (λ _ _, alist.eq_lookup_of_perm a)
@@ -28,10 +28,10 @@ quot.lift_on f alist.keys (λ _ _, alist.eq_keys_of_perm)
 
 def erase [decidable_eq α] (a : α) (f : finmap α β) : finmap α β :=
 quot.lift_on f (quot.mk _ ∘ alist.erase a)
-               (λ l₁ l₂, quot.sound ∘ alist.perm_erase a)
+               (λ _ _, quot.sound ∘ alist.perm_erase a)
 
 def replace [decidable_eq α] (s : sigma β) (f : finmap α β) : finmap α β :=
 quot.lift_on f (quot.mk _ ∘ alist.replace s)
-               (λ l₁ l₂, quot.sound ∘ alist.perm_replace s)
+               (λ _ _, quot.sound ∘ alist.perm_replace s)
 
 end finmap
