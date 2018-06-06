@@ -39,6 +39,9 @@ def insert [decidable_eq α] (s : sigma β) (l : alist α β) : alist α β :=
 def erase [decidable_eq α] (a : α) (l : alist α β) : alist α β :=
 ⟨l.val.dict_erase a, list.nodup_keys_dict_erase a l.property⟩
 
+def replace [decidable_eq α] (s : sigma β) (l : alist α β) : alist α β :=
+⟨l.val.dict_replace s, list.nodup_keys_dict_replace s l.property⟩
+
 def perm (l₁ : alist α β) (l₂ : alist α β) : Prop :=
 list.perm l₁.1 l₂.1
 
@@ -73,6 +76,10 @@ list.dict_lookup_eq_of_perm a l₁.property l₂.property p
 theorem perm_erase [decidable_eq α] (a : α) (p : perm l₁ l₂) :
   perm (l₁.erase a) (l₂.erase a) :=
 list.perm_dict_erase a l₁.property l₂.property p
+
+theorem perm_replace [decidable_eq α] (s : sigma β) (p : perm l₁ l₂) :
+  perm (l₁.replace s) (l₂.replace s) :=
+list.perm_dict_replace s l₁.property l₂.property p
 
 end alist
 

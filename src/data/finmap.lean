@@ -30,4 +30,8 @@ def erase [decidable_eq α] (a : α) (f : finmap α β) : finmap α β :=
 quot.lift_on f (quot.mk _ ∘ alist.erase a)
                (λ l₁ l₂, quot.sound ∘ alist.perm_erase a)
 
+def replace [decidable_eq α] (s : sigma β) (f : finmap α β) : finmap α β :=
+quot.lift_on f (quot.mk _ ∘ alist.replace s)
+               (λ l₁ l₂, quot.sound ∘ alist.perm_replace s)
+
 end finmap

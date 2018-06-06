@@ -5,7 +5,7 @@ namespace list
 universes u v
 variables {α : Type u} {β : α → Type v}
 variables {a a₁ a₂ : α} {b : β a} {b₁ : β a₁} {b₂ : β a₂}
-variables {s s₁ s₂ : sigma β}
+variables {s s₁ s₂ t : sigma β}
 variables {l l₁ l₂ : list (sigma β)}
 
 def dict_lookup_all [decidable_eq α] (a : α) : list (sigma β) → list (β a)
@@ -152,6 +152,44 @@ by simp [dict_erase_all, h]
 
 end dict_erase_all
 
+def dict_replace [decidable_eq α] (s : sigma β) : list (sigma β) → list (sigma β)
+| []     := []
+| (t::l) := if h : t.1 = s.1 then s :: l else t :: dict_replace l
+
+section dict_replace
+variables [decidable_eq α]
+
+@[simp] theorem dict_replace_nil : dict_replace s [] = [] :=
+rfl
+
+@[simp] theorem dict_replace_cons_eq (h : t.1 = s.1) : (t :: l).dict_replace s = s :: l :=
+by simp [dict_replace, h]
+
+@[simp] theorem dict_replace_cons_ne (h : t.1 ≠ s.1) : (t :: l).dict_replace s = t :: l.dict_replace s :=
+by simp [dict_replace, h]
+
+theorem mem_cons_of_dict_ne (h : t.1 ≠ s.1) : s ∈ t :: l → s ∈ l :=
+by cases s; cases t; simp [ne.symm h]
+
+theorem mem_of_mem_dict_replace_ne (h : t.1 ≠ s.1) : s ∈ l.dict_replace t → s ∈ l :=
+begin
+  induction l generalizing s t,
+  case list.nil { simp },
+  case list.cons : hd tl ih {
+    by_cases h₁ : hd.1 = t.1,
+    { rw dict_replace_cons_eq h₁,
+      exact mem_cons_of_mem hd ∘ mem_cons_of_dict_ne h },
+    { rw dict_replace_cons_ne h₁,
+      intro p,
+      simp at p,
+      cases p,
+      { simp [p] },
+      { simp [ih h p] } }
+  }
+end
+
+end dict_replace
+
 def nodup_keys : list (sigma β) → Prop := pairwise (sigma.on_fst (≠))
 
 section nodup_keys
@@ -160,7 +198,7 @@ section nodup_keys
 pairwise.nil _
 
 @[simp] theorem nodup_keys_cons :
-  (s :: l).nodup_keys ↔ (∀ (s₁ : sigma β), s₁ ∈ l → s.1 ≠ s₁.1) ∧ l.nodup_keys :=
+  (s :: l).nodup_keys ↔ (∀ {s' : sigma β}, s' ∈ l → s.1 ≠ s'.1) ∧ l.nodup_keys :=
 by simp [nodup_keys, sigma.on_fst]
 
 theorem perm_nodup_keys (p : l₁ ~ l₂) : l₁.nodup_keys ↔ l₂.nodup_keys :=
@@ -199,7 +237,31 @@ begin
     { simp [h, nd.2] },
     { rw [dict_erase_cons_ne h, nodup_keys_cons],
       split,
-      { intros s p, exact nd.1 s (mem_of_mem_dict_erase p) },
+      { intros s p, exact nd.1 (mem_of_mem_dict_erase p) },
+      { exact ih nd.2 } }
+  }
+end
+
+@[simp] theorem nodup_keys_dict_replace [decidable_eq α] (s : sigma β) :
+  l.nodup_keys → (l.dict_replace s).nodup_keys :=
+begin
+  induction l,
+  case list.nil { simp },
+  case list.cons : hd tl ih {
+    intro nd, rw nodup_keys_cons at nd,
+    by_cases h₁ : hd.1 = s.1,
+    { cases hd with a₁ b₁,
+      cases s with a₂ b₂,
+      dsimp at h₁,
+      induction h₁,
+      rw [@dict_replace_cons_eq _ _ ⟨a₁, b₂⟩ ⟨a₁, b₁⟩ _ _ rfl, nodup_keys_cons],
+      exact nd },
+    { rw [dict_replace_cons_ne h₁, nodup_keys_cons],
+      split,
+      { intros s' p,
+        by_cases h₂ : s.1 = s'.1,
+        { rwa h₂ at h₁ },
+        { exact nd.1 (mem_of_mem_dict_replace_ne h₂ p) } },
       { exact ih nd.2 } }
   }
 end
@@ -258,8 +320,7 @@ begin
       { intro p,
         cases p with p p,
         { induction p, exact false.elim (ne.irrefl h) },
-        { exact (ih nd.2).mpr p } }
-    }
+        { exact (ih nd.2).mpr p } } }
   }
 end
 
@@ -365,6 +426,31 @@ begin
   },
   case list.perm.trans : l₁ l₂ l₃ p₁₂ p₂₃ ih₁₂ ih₂₃ {
     exact perm.trans ih₁₂ ih₂₃
+  }
+end
+
+theorem perm_dict_replace (s : sigma β) (nd₁ : l₁.nodup_keys) (nd₂ : l₂.nodup_keys) (p : l₁ ~ l₂) :
+  l₁.dict_replace s ~ l₂.dict_replace s :=
+begin
+  induction p,
+  case list.perm.nil { refl },
+  case list.perm.skip : t l₁ l₂ p ih {
+    simp at nd₁ nd₂,
+    by_cases h : t.1 = s.1; simp [p, h, ih nd₁.2 nd₂.2, perm.skip]
+  },
+  case list.perm.swap : s₁ s₂ l nd₂₁ nd₁₂ {
+    simp [and.assoc] at nd₂₁ nd₁₂,
+    by_cases h₂ : s₂.1 = s.1,
+    { rw dict_replace_cons_eq h₂,
+      by_cases h₁ : s₁.1 = s.1,
+      { rw dict_replace_cons_eq h₁,
+        exact absurd (h₂.trans h₁.symm) nd₂₁.1 },
+      { simp [h₁, h₂, perm.swap] } },
+    { by_cases h₁ : s₁.1 = s.1; simp [h₁, h₂, perm.swap] }
+  },
+  case list.perm.trans : l₁ l₂ l₃ p₁₂ p₂₃ ih₁₂ ih₂₃ nd₁ nd₃ {
+    have nd₂ : l₂.nodup_keys := (perm_nodup_keys p₁₂).mp nd₁,
+    exact perm.trans (ih₁₂ nd₁ nd₂) (ih₂₃ nd₂ nd₃)
   }
 end
 
