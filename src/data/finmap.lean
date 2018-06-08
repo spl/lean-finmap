@@ -34,4 +34,9 @@ def replace [decidable_eq α] (s : sigma β) (f : finmap α β) : finmap α β :
 quot.lift_on f (quot.mk _ ∘ alist.replace s)
                (λ _ _, quot.sound ∘ alist.perm_replace s)
 
+def union [decidable_eq α] (f : finmap α β) (g : finmap α β) : finmap α β :=
+quotient.lift_on₂ f g
+  (λ l₁ l₂, ⟦l₁ ++ l₂⟧)
+  (λ _ _ _ _ p₁ p₂, quot.sound $ alist.perm_append p₁ p₂)
+
 end finmap

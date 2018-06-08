@@ -8,7 +8,7 @@ def alist (α : Type u) (β : α → Type v) : Type (max u v) :=
 
 namespace alist
 variables {α : Type u} {β : α → Type v}
-variables {l₁ l₂ l₃ : alist α β}
+variables {l₁ l₂ l₃ l₄ : alist α β}
 
 theorem eq_of_veq : ∀ {l₁ l₂ : alist α β}, l₁.val = l₂.val → l₁ = l₂
 | ⟨s, _⟩ ⟨t, _⟩ h := by congr; assumption
@@ -38,6 +38,12 @@ def insert [decidable_eq α] (s : sigma β) (l : alist α β) : alist α β :=
 
 def erase [decidable_eq α] (a : α) (l : alist α β) : alist α β :=
 ⟨l.val.dict_erase a, list.nodup_keys_dict_erase a l.property⟩
+
+protected def append [decidable_eq α] (l₁ : alist α β) (l₂ : alist α β) : alist α β :=
+⟨l₁.val.dict_append l₂.val, list.nodup_keys_append l₁.property l₂.property⟩
+
+instance [decidable_eq α] : has_append (alist α β) :=
+⟨alist.append⟩
 
 def replace [decidable_eq α] (s : sigma β) (l : alist α β) : alist α β :=
 ⟨l.val.dict_replace s, list.nodup_keys_dict_replace s l.property⟩
@@ -76,6 +82,10 @@ list.dict_lookup_eq_of_perm a l₁.property l₂.property p
 theorem perm_erase [decidable_eq α] (a : α) (p : perm l₁ l₂) :
   perm (l₁.erase a) (l₂.erase a) :=
 list.perm_dict_erase a l₁.property l₂.property p
+
+theorem perm_append [decidable_eq α] (p₁₂ : perm l₁ l₂) (p₃₄ : perm l₃ l₄) :
+  perm (l₁ ++ l₃) (l₂ ++ l₄) :=
+list.perm_dict_append l₃.property l₄.property p₁₂ p₃₄
 
 theorem perm_replace [decidable_eq α] (s : sigma β) (p : perm l₁ l₂) :
   perm (l₁.replace s) (l₂.replace s) :=
