@@ -26,6 +26,10 @@ instance [decidable_eq α] : has_mem α (finmap α β) :=
 def keys [decidable_eq α] (f : finmap α β) : finset α :=
 quot.lift_on f alist.keys (λ _ _, alist.eq_keys_of_perm)
 
+def insert [decidable_eq α] (s : sigma β) (f : finmap α β) : finmap α β :=
+quot.lift_on f (quot.mk _ ∘ alist.insert s)
+               (λ _ _, quot.sound ∘ alist.perm_insert s)
+
 def erase [decidable_eq α] (a : α) (f : finmap α β) : finmap α β :=
 quot.lift_on f (quot.mk _ ∘ alist.erase a)
                (λ _ _, quot.sound ∘ alist.perm_erase a)

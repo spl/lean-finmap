@@ -119,6 +119,25 @@ instance decidable_dict_mem (a : α) : ∀ (l : list (sigma β)), decidable (a d
 
 end dict_mem
 
+def dict_subset [decidable_eq α] (l₁ l₂ : list (sigma β)) := ∀ ⦃a : α⦄, a d∈ l₁ → a d∈ l₂
+
+local infix ` d⊆ `:51 := dict_subset
+
+section dict_subset
+variables [decidable_eq α]
+
+theorem dict_subset_of_sublist : ∀ {l₁ l₂ : list (sigma β)}, l₁ <+ l₂ → l₁ d⊆ l₂
+| _ _ sublist.slnil              _  h := h
+| _ _ (sublist.cons  l₁ l₂ s sl) a₂ h :=
+  dict_mem_cons_of_dict_mem s (dict_subset_of_sublist sl h)
+| _ _ (sublist.cons2 l₁ l₂ s sl) a₂ h :=
+  match dict_mem_cons.mp h with
+  | or.inl h := dict_mem_cons_eq h
+  | or.inr h := dict_mem_cons_of_dict_mem s (dict_subset_of_sublist sl h)
+  end
+
+end dict_subset
+
 def dict_insert [decidable_eq α] (s : sigma β) (l : list (sigma β)) : list (sigma β) :=
 if s.1 d∈ l then l else s :: l
 
@@ -132,6 +151,13 @@ by simp [h]
 
 @[simp] theorem dict_insert_of_not_dict_mem (h : s.1 d∉ l) : l.dict_insert s = s :: l :=
 by simp [h]
+
+@[simp] theorem dict_insert_cons_eq (h : s₂.1 = s₁.1) : (s₂ :: l).dict_insert s₁ = s₂ :: l :=
+by simp [h]
+
+@[simp] theorem dict_insert_cons_ne (h : s₂.1 ≠ s₁.1) :
+  (s₂ :: l).dict_insert s₁ = if s₁.1 d∈ l then s₂ :: l else s₁ :: s₂ :: l :=
+by by_cases h' : s₁.1 d∈ l; simp [h, h']
 
 end dict_insert
 
@@ -203,20 +229,6 @@ iff.intro mem_of_mem_dict_erase $ λ p,
     end
   else
     by simp [q, p]
-
-def dict_subset (l₁ l₂ : list (sigma β)) := ∀ ⦃a : α⦄, a d∈ l₁ → a d∈ l₂
-
-local infix ` d⊆ `:51 := dict_subset
-
-theorem dict_subset_of_sublist : ∀ {l₁ l₂ : list (sigma β)}, l₁ <+ l₂ → l₁ d⊆ l₂
-| _ _ sublist.slnil              _  h := h
-| _ _ (sublist.cons  l₁ l₂ s sl) a₂ h :=
-  dict_mem_cons_of_dict_mem s (dict_subset_of_sublist sl h)
-| _ _ (sublist.cons2 l₁ l₂ s sl) a₂ h :=
-  match dict_mem_cons.mp h with
-  | or.inl h := dict_mem_cons_eq h
-  | or.inr h := dict_mem_cons_of_dict_mem s (dict_subset_of_sublist sl h)
-  end
 
 theorem dict_erase_dict_subset (a : α) (l : list (sigma β)) : l.dict_erase a d⊆ l :=
 dict_subset_of_sublist (dict_erase_sublist a l)
@@ -380,9 +392,8 @@ begin
   induction l,
   case list.nil { simp },
   case list.cons : hd tl ih {
-    cases hd with a b,
     simp at h,
-    rw [perm_nodup_keys (perm.swap ⟨a, b⟩ s tl), nodup_keys_cons, ih h.2, nodup_keys_cons],
+    rw [perm_nodup_keys (perm.swap hd s tl), nodup_keys_cons, ih h.2, nodup_keys_cons],
     simp [h.1]
   }
 end
@@ -552,22 +563,67 @@ begin
   induction p,
   case list.perm.nil { refl },
   case list.perm.skip : s₁ l₁ l₂ p ih nd₁ nd₂ {
-    cases s₁ with a₁ b₁,
-    by_cases h : a₁ = a,
+    by_cases h : s₁.1 = a,
     { simp [h] },
     { simp at nd₁ nd₂, simp [h, ih nd₁.2 nd₂.2] }
   },
   case list.perm.swap : s₁ s₂ l nd₂₁ nd₁₂ {
-    cases s₁ with a₁ b₁,
-    cases s₂ with a₂ b₂,
     simp at nd₂₁ nd₁₂,
-    by_cases h₂ : a₂ = a,
+    by_cases h₂ : s₂.1 = a,
     { induction h₂, simp [nd₁₂.1] },
-    { by_cases h₁ : a₁ = a; simp [h₂, h₁] }
+    { by_cases h₁ : s₁.1 = a; simp [h₂, h₁] }
   },
   case list.perm.trans : l₁ l₂ l₃ p₁₂ p₂₃ ih₁₂ ih₂₃ nd₁ nd₃ {
     have nd₂ : l₂.nodup_keys := (perm_nodup_keys p₁₂).mp nd₁,
     exact eq.trans (ih₁₂ nd₁ nd₂) (ih₂₃ nd₂ nd₃)
+  }
+end
+
+theorem perm_dict_subset (p : l₁ ~ l₂) : l₁ d⊆ l₂ :=
+begin
+  intro a,
+  induction p,
+  case list.perm.nil { exact id },
+  case list.perm.skip : s₁ l₁ l₂ p ih {
+    repeat {rw dict_mem_cons},
+    exact or.rec or.inl (or.inr ∘ ih)
+  },
+  case list.perm.swap : s₁ s₂ l {
+    repeat {rw dict_mem_cons},
+    rw or.left_comm,
+    exact id
+  },
+  case list.perm.trans : l₁ l₂ l₃ p₁₂ p₂₃ ih₁₂ ih₂₃ {
+    exact ih₂₃ ∘ ih₁₂
+  }
+end
+
+theorem dict_mem_of_perm (p : l₁ ~ l₂) : a d∈ l₁ ↔ a d∈ l₂ :=
+⟨by apply perm_dict_subset p, by apply perm_dict_subset p.symm⟩
+
+theorem perm_dict_insert (s : sigma β) (p : l₁ ~ l₂) :
+  l₁.dict_insert s ~ l₂.dict_insert s :=
+begin
+  induction p,
+  case list.perm.nil { refl },
+  case list.perm.skip : s' l₁ l₂ p ih {
+    by_cases h : s'.1 = s.1,
+    { simp [h, p, perm.skip] },
+    { by_cases h₁ : s.1 d∈ l₁; by_cases h₂ : s.1 d∈ l₂,
+      { simp [h, h₁, h₂, p, perm.skip] },
+      { exact absurd ((dict_mem_of_perm p).mp h₁) h₂ },
+      { exact absurd ((dict_mem_of_perm p).mpr h₂) h₁ },
+      { simp [h, h₁, h₂, p, perm.skip] } }
+  },
+  case list.perm.swap : s₁ s₂ l {
+    by_cases h₂ : s₂.1 = s.1,
+    { simp [h₂, perm.swap] },
+    { by_cases h₁ : s₁.1 = s.1,
+      { simp [h₂, h₁, perm.swap] },
+      { by_cases h₃ : s.1 d∈ l; simp [h₃, h₂, h₁, perm.skip, perm.swap] } }
+  },
+  case list.perm.trans : l₁ l₂ l₃ p₁₂ p₂₃ ih₁₂ ih₂₃ {
+    exact perm.trans ih₁₂ ih₂₃
   }
 end
 
@@ -599,12 +655,10 @@ begin
     by_cases h : s.1 = a; simp [p, h, ih nd₁.2 nd₂.2, perm.skip]
   },
   case list.perm.swap : s₁ s₂ l nd₂₁ nd₁₂ {
-    cases s₁ with a₁ b₁,
-    cases s₂ with a₂ b₂,
     simp at nd₁₂,
-    by_cases h₂ : a₂ = a,
+    by_cases h₂ : s₂.1 = a,
     { induction h₂, simp [nd₁₂.1] },
-    { by_cases h₁ : a₁ = a; simp [h₂, h₁, perm.swap] }
+    { by_cases h₁ : s₁.1 = a; simp [h₂, h₁, perm.swap] }
   },
   case list.perm.trans : l₁ l₂ l₃ p₁₂ p₂₃ ih₁₂ ih₂₃ nd₁ nd₃ {
     have nd₂ : l₂.nodup_keys := (perm_nodup_keys p₁₂).mp nd₁,
@@ -633,7 +687,7 @@ begin
   induction p generalizing l,
   case list.perm.nil { refl },
   case list.perm.skip : s l₁ l₂ p ih {
-    simp [ih (dict_erase (s.fst) l), perm.skip],
+    simp [ih (dict_erase s.1 l), perm.skip],
   },
   case list.perm.swap : s₁ s₂ l {
     simp [dict_erase_comm, perm.swap]

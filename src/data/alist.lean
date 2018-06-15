@@ -79,6 +79,10 @@ theorem eq_lookup_of_perm [decidable_eq α] (a : α) (p : perm l₁ l₂) :
   l₁.lookup a = l₂.lookup a :=
 list.dict_lookup_eq_of_perm a l₁.property l₂.property p
 
+theorem perm_insert [decidable_eq α] (s : sigma β) (p : perm l₁ l₂) :
+  perm (l₁.insert s) (l₂.insert s) :=
+list.perm_dict_insert s p
+
 theorem perm_erase [decidable_eq α] (a : α) (p : perm l₁ l₂) :
   perm (l₁.erase a) (l₂.erase a) :=
 list.perm_dict_erase a l₁.property l₂.property p
