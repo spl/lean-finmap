@@ -19,19 +19,84 @@ theorem eq_of_veq : ∀ {l₁ l₂ : alist α β}, l₁.val = l₂.val → l₁ 
 instance [decidable_eq α] [∀ a, decidable_eq (β a)] : decidable_eq (alist α β)
 | l₁ l₂ := decidable_of_iff _ val_inj
 
-instance : has_emptyc (alist α β) := ⟨⟨∅, list.nodup_keys_nil⟩⟩
+protected def empty : alist α β :=
+⟨[], list.nodup_keys_nil⟩
+
+instance : has_emptyc (alist α β) :=
+⟨alist.empty⟩
+
+section empty
+
+@[simp] theorem empty_val : (∅ : alist α β).val = [] :=
+rfl
+
+end empty
 
 def lookup [decidable_eq α] (a : α) (l : alist α β) : option (β a) :=
 l.val.dict_lookup a
 
-instance [decidable_eq α] : has_mem α (alist α β) :=
-⟨λ a l, l.val.dict_mem a⟩
+section lookup
+variables [decidable_eq α]
 
-def keys [decidable_eq α] (l : alist α β) : finset α :=
+@[simp] theorem lookup_empty (a : α) : lookup a (∅ : alist α β) = none :=
+rfl
+
+@[simp] theorem lookup_eq (a : α) (l : alist α β) :
+  lookup a l = none ∨ ∃ (b : β a), lookup a l = some b :=
+by cases l; simp [lookup]
+
+end lookup
+
+def keys [decidable_eq α] (l : alist α β) : list α :=
+l.val.dict_keys
+
+section keys
+variables [decidable_eq α]
+variables {a : α} {l : alist α β}
+
+@[simp] theorem keys_empty : keys (∅ : alist α β) = [] :=
+rfl
+
+@[simp] theorem keys_nodup (l : alist α β) : l.keys.nodup :=
+list.dict_keys_nodup_of_nodup_keys l.property
+
+end keys
+
+def keyset [decidable_eq α] (l : alist α β) : finset α :=
 l.val.dict_keys.to_finset
 
-def insert [decidable_eq α] (s : sigma β) (l : alist α β) : alist α β :=
+instance [decidable_eq α] : has_mem α (alist α β) :=
+⟨λ a l, a ∈ l.keys⟩
+
+section mem
+variables [decidable_eq α]
+variables {a : α} {l : alist α β}
+
+theorem mem_keys : a ∈ l = (a ∈ l.keys) :=
+rfl
+
+@[simp] theorem not_mem_empty (a : α) : a ∉ (∅ : alist α β) :=
+by simp [mem_keys]
+
+@[simp] theorem ne_empty_of_mem {a : α} {l : alist α β} (h : a ∈ l) : l ≠ ∅
+| e := @not_mem_empty _ β _ a $ e ▸ h
+
+end mem
+
+protected def insert [decidable_eq α] (s : sigma β) (l : alist α β) : alist α β :=
 ⟨l.val.dict_insert s, (list.nodup_keys_dict_insert s).mpr l.property⟩
+
+instance [decidable_eq α] : has_insert (sigma β) (alist α β) :=
+⟨alist.insert⟩
+
+section insert
+variables [decidable_eq α]
+variables {a : α} {l : alist α β}
+
+@[simp] theorem insert_val (s : sigma β) (l : alist α β) : (l.insert s).val = l.val.dict_insert s :=
+rfl
+
+end insert
 
 def erase [decidable_eq α] (a : α) (l : alist α β) : alist α β :=
 ⟨l.val.dict_erase a, list.nodup_keys_dict_erase a l.property⟩
@@ -41,6 +106,11 @@ protected def append [decidable_eq α] (l₁ : alist α β) (l₂ : alist α β)
 
 instance [decidable_eq α] : has_append (alist α β) :=
 ⟨alist.append⟩
+
+section append
+variables [decidable_eq α]
+
+end append
 
 def replace [decidable_eq α] (s : sigma β) (l : alist α β) : alist α β :=
 ⟨l.val.dict_replace s, list.nodup_keys_dict_replace s l.property⟩
@@ -67,8 +137,10 @@ instance decidable_perm [decidable_eq α] [∀ a, decidable_eq (β a)] (l₁ l�
   decidable (perm l₁ l₂) :=
 list.decidable_perm l₁.val l₂.val
 
-theorem eq_keys_of_perm [decidable_eq α] (p : perm l₁ l₂) :
-  alist.keys l₁ = alist.keys l₂ :=
+theorem perm_keys_of_perm [decidable_eq α] (p : perm l₁ l₂) : l₁.keys ~ l₂.keys :=
+list.perm_map sigma.fst p
+
+theorem eq_keyset_of_perm [decidable_eq α] (p : perm l₁ l₂) : l₁.keyset = l₂.keyset :=
 finset.eq_of_veq $ quot.sound $ list.perm_erase_dup_of_perm $
   list.dict_keys_eq_of_perm l₁.property l₂.property p
 

@@ -48,6 +48,18 @@ by simp [h]
 @[simp] theorem dict_lookup_cons_ne (h : s.1 ≠ a) : dict_lookup a (s :: l) = dict_lookup a l :=
 by simp [h]
 
+@[simp] theorem dict_lookup_eq (a : α) :
+  ∀ (l : list (sigma β)), dict_lookup a l = none ∨ ∃ (b : β a), dict_lookup a l = some b
+| []     := or.inl rfl
+| (s::l) :=
+  if h₁ : s.1 = a then
+    or.inr ⟨h₁.rec_on s.2, dict_lookup_cons_eq h₁⟩
+  else
+    match dict_lookup_eq l with
+    | or.inl h₂      := or.inl $ (dict_lookup_cons_ne h₁).trans h₂
+    | or.inr ⟨b, h₂⟩ := or.inr ⟨b, (dict_lookup_cons_ne h₁).trans h₂⟩
+    end
+
 end dict_lookup
 
 def dict_mem [decidable_eq α] (a : α) (l : list (sigma β)) : Prop :=
@@ -538,6 +550,9 @@ end dict_keys
 
 theorem nodup_of_nodup_keys : l.nodup_keys → l.nodup :=
 pairwise.imp $ λ ⟨a₁, b₁⟩ ⟨a₂, b₂⟩ (h : a₁ ≠ a₂), by simp [h]
+
+theorem dict_keys_nodup_of_nodup_keys : l.nodup_keys → l.dict_keys.nodup :=
+(pairwise_map sigma.fst).mpr
 
 variables [decidable_eq α]
 
