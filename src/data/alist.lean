@@ -24,11 +24,8 @@ instance : has_emptyc (alist α β) := ⟨⟨∅, list.nodup_keys_nil⟩⟩
 def lookup [decidable_eq α] (a : α) (l : alist α β) : option (β a) :=
 l.val.dict_lookup a
 
-def contains [decidable_eq α] (l : alist α β) (a : α) : bool :=
-(l.lookup a).is_some
-
 instance [decidable_eq α] : has_mem α (alist α β) :=
-⟨λ a l, l.contains a⟩
+⟨λ a l, l.val.dict_mem a⟩
 
 def keys [decidable_eq α] (l : alist α β) : finset α :=
 l.val.dict_keys.to_finset
