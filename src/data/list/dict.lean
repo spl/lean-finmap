@@ -1,7 +1,16 @@
 import data.list.perm
 import data.sigma.on_fst
 
+namespace option
+variables {α : Type*} {o : option α}
+
+@[simp] theorem is_some_eq_ff : is_some o = ff ↔ o = none :=
+by cases o; simp [is_some]
+
+end option
+
 local attribute [simp] decidable.not_or_iff_and_not and.assoc
+local attribute [-simp] sigma.forall
 
 namespace list
 universes u v
@@ -150,29 +159,6 @@ theorem dict_subset_of_sublist : ∀ {l₁ l₂ : list (sigma β)}, l₁ <+ l₂
 
 end dict_subset
 
-def dict_insert [decidable_eq α] (s : sigma β) (l : list (sigma β)) : list (sigma β) :=
-if s.1 d∈ l then l else s :: l
-
-section dict_insert
-variables [decidable_eq α]
-
-local attribute [simp] dict_insert
-
-@[simp] theorem dict_insert_of_dict_mem (h : s.1 d∈ l) : l.dict_insert s = l :=
-by simp [h]
-
-@[simp] theorem dict_insert_of_not_dict_mem (h : s.1 d∉ l) : l.dict_insert s = s :: l :=
-by simp [h]
-
-@[simp] theorem dict_insert_cons_eq (h : s₂.1 = s₁.1) : (s₂ :: l).dict_insert s₁ = s₂ :: l :=
-by simp [h]
-
-@[simp] theorem dict_insert_cons_ne (h : s₂.1 ≠ s₁.1) :
-  (s₂ :: l).dict_insert s₁ = if s₁.1 d∈ l then s₂ :: l else s₁ :: s₂ :: l :=
-by by_cases h' : s₁.1 d∈ l; simp [h, h']
-
-end dict_insert
-
 def dict_erase [decidable_eq α] (a : α) : list (sigma β) → list (sigma β)
 | []     := []
 | (s::l) := if h : s.1 = a then l else s :: dict_erase l
@@ -271,7 +257,8 @@ theorem dict_erase_append_right : ∀ {l₁ : list (sigma β)} (l₂ : list (sig
 | []       _  h := rfl
 | (s::tl₁) l₂ h := by simp at h; simp [h.1, dict_erase_append_right l₂ h.2]
 
-theorem dict_erase_comm : (l.dict_erase a₁).dict_erase a₂ = (l.dict_erase a₂).dict_erase a₁ :=
+theorem dict_erase_comm (a₁ a₂ : α) (l : list (sigma β)) :
+  (l.dict_erase a₁).dict_erase a₂ = (l.dict_erase a₂).dict_erase a₁ :=
 if h : a₂ = a₁ then
   by simp [h]
 else if ha₁ : a₁ d∈ l then
@@ -310,6 +297,17 @@ by simp [dict_erase_all, h]
 
 end dict_erase_all
 
+def dict_insert [decidable_eq α] (s : sigma β) (l : list (sigma β)) : list (sigma β) :=
+s :: l.dict_erase s.1
+
+section dict_insert
+variables [decidable_eq α]
+
+@[simp] theorem dict_insert_eq_cons_dict_erase : l.dict_insert s = s :: l.dict_erase s.1 :=
+rfl
+
+end dict_insert
+
 /-- Left-biased append -/
 def dict_append [decidable_eq α] : list (sigma β) → list (sigma β) → list (sigma β)
 | []      l  := l
@@ -320,11 +318,25 @@ local infixr ` d++ `:67 := dict_append
 section dict_append
 variables [decidable_eq α]
 
-@[simp] theorem dict_append_nil : [] d++ l = l :=
+@[simp] theorem nil_dict_append (l : list (sigma β)) : [] d++ l = l :=
 rfl
+
+@[simp] theorem dict_append_nil : ∀ (l : list (sigma β)), l d++ [] = l
+| []     := rfl
+| (s::l) := by rw [dict_append, dict_erase_nil, dict_append_nil l]
 
 @[simp] theorem dict_append_cons : (s :: l₁) d++ l₂ = s :: l₁ d++ dict_erase s.1 l₂ :=
 rfl
+
+@[simp] theorem dict_erase_dict_append : ∀ {l₁ : list (sigma β)} (l₂ : list (sigma β)),
+  l₁.dict_erase a d++ l₂.dict_erase a = (l₁ d++ l₂).dict_erase a
+| []       _  := rfl
+| (s::tl₁) l₂ := by by_cases h : s.1 = a;
+                    simp [h, dict_erase_comm a s.1 l₂, dict_erase_dict_append]
+
+@[simp] theorem dict_insert_dict_append :
+  l₁.dict_insert s d++ l₂ = (l₁ d++ l₂).dict_insert s :=
+by simp
 
 theorem mem_dict_append : s ∈ l₁ d++ l₂ → s ∈ l₁ ∨ s ∈ l₂ :=
 begin
@@ -397,6 +409,27 @@ by simp [nodup_keys, sigma.on_fst]
 theorem perm_nodup_keys (p : l₁ ~ l₂) : l₁.nodup_keys ↔ l₂.nodup_keys :=
 perm_pairwise (@sigma.on_fst.symm α β (≠) (@ne.symm α)) p
 
+@[simp] theorem dict_lookup_dict_erase_of_nodup_keys [decidable_eq α] (nd : l.nodup_keys) :
+  (l.dict_erase a).dict_lookup a = none :=
+begin
+  induction l,
+  case list.nil { simp },
+  case list.cons : hd tl ih {
+    simp at nd,
+    by_cases h₁ : hd.1 = a,
+    { by_cases h₂ : a d∈ tl,
+        { cases exists_mem_of_dict_mem h₂ with b h₃,
+          exact absurd h₁ (nd.1 h₃) },
+        { simp [dict_mem] at h₂,
+          simp [h₁, h₂] } },
+    { simp [h₁, ih nd.2] }
+  }
+end
+
+@[simp] theorem not_dict_mem_dict_erase_self_of_nodup_keys [decidable_eq α] (nd : l.nodup_keys) :
+  a d∉ dict_erase a l :=
+by simp [dict_mem, nd]
+
 @[simp] theorem nodup_keys_cons_of_not_dict_mem [decidable_eq α]
 (s : sigma β) (h : s.1 d∉ l) :
   (s :: l).nodup_keys ↔ l.nodup_keys :=
@@ -408,14 +441,6 @@ begin
     rw [perm_nodup_keys (perm.swap hd s tl), nodup_keys_cons, ih h.2, nodup_keys_cons],
     simp [h.1]
   }
-end
-
-@[simp] theorem nodup_keys_dict_insert [decidable_eq α] (s : sigma β) :
-  (l.dict_insert s).nodup_keys ↔ l.nodup_keys  :=
-begin
-  by_cases h : s.1 d∈ l,
-  { simp [nodup_keys, dict_insert, h] },
-  { rw [dict_insert_of_not_dict_mem h, nodup_keys_cons_of_not_dict_mem s h] }
 end
 
 @[simp] theorem nodup_keys_dict_erase [decidable_eq α] (a : α) :
@@ -448,6 +473,11 @@ begin
       case or.inr : h { exact ih nd.2 h } }
   }
 end
+
+@[simp] theorem nodup_keys_dict_insert [decidable_eq α] (s : sigma β) (nd : l.nodup_keys) :
+  (l.dict_insert s).nodup_keys :=
+(nodup_keys_cons_of_not_dict_mem _ (not_dict_mem_dict_erase_self_of_nodup_keys nd)).mpr $
+  nodup_keys_dict_erase _ nd
 
 theorem nodup_keys_append [decidable_eq α] :
   l₁.nodup_keys → l₂.nodup_keys → (l₁ d++ l₂).nodup_keys :=
@@ -616,32 +646,6 @@ end
 theorem dict_mem_of_perm (p : l₁ ~ l₂) : a d∈ l₁ ↔ a d∈ l₂ :=
 ⟨by apply perm_dict_subset p, by apply perm_dict_subset p.symm⟩
 
-theorem perm_dict_insert (s : sigma β) (p : l₁ ~ l₂) :
-  l₁.dict_insert s ~ l₂.dict_insert s :=
-begin
-  induction p,
-  case list.perm.nil { refl },
-  case list.perm.skip : s' l₁ l₂ p ih {
-    by_cases h : s'.1 = s.1,
-    { simp [h, p, perm.skip] },
-    { by_cases h₁ : s.1 d∈ l₁; by_cases h₂ : s.1 d∈ l₂,
-      { simp [h, h₁, h₂, p, perm.skip] },
-      { exact absurd ((dict_mem_of_perm p).mp h₁) h₂ },
-      { exact absurd ((dict_mem_of_perm p).mpr h₂) h₁ },
-      { simp [h, h₁, h₂, p, perm.skip] } }
-  },
-  case list.perm.swap : s₁ s₂ l {
-    by_cases h₂ : s₂.1 = s.1,
-    { simp [h₂, perm.swap] },
-    { by_cases h₁ : s₁.1 = s.1,
-      { simp [h₂, h₁, perm.swap] },
-      { by_cases h₃ : s.1 d∈ l; simp [h₃, h₂, h₁, perm.skip, perm.swap] } }
-  },
-  case list.perm.trans : l₁ l₂ l₃ p₁₂ p₂₃ ih₁₂ ih₂₃ {
-    exact perm.trans ih₁₂ ih₂₃
-  }
-end
-
 theorem dict_keys_eq_of_perm (nd₁ : l₁.nodup_keys) (nd₂ : l₂.nodup_keys) (p : l₁ ~ l₂) :
   l₁.dict_keys ~ l₂.dict_keys :=
 begin
@@ -696,6 +700,10 @@ begin
     exact perm.trans ih₁₂ ih₂₃
   }
 end
+
+theorem perm_dict_insert (s : sigma β) (nd₁ : l₁.nodup_keys) (nd₂ : l₂.nodup_keys) (p : l₁ ~ l₂) :
+  l₁.dict_insert s ~ l₂.dict_insert s :=
+perm.skip s $ perm_dict_erase s.1 nd₁ nd₂ p
 
 theorem perm_dict_append_left (l : list (sigma β)) (p : l₁ ~ l₂) : l₁ d++ l ~ l₂ d++ l :=
 begin

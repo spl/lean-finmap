@@ -84,7 +84,7 @@ by simp [mem_keys]
 end mem
 
 protected def insert [decidable_eq α] (s : sigma β) (l : alist α β) : alist α β :=
-⟨l.val.dict_insert s, (list.nodup_keys_dict_insert s).mpr l.property⟩
+⟨l.val.dict_insert s, list.nodup_keys_dict_insert s l.property⟩
 
 instance [decidable_eq α] : has_insert (sigma β) (alist α β) :=
 ⟨alist.insert⟩
@@ -93,7 +93,7 @@ section insert
 variables [decidable_eq α]
 variables {a : α} {l : alist α β}
 
-@[simp] theorem insert_val (s : sigma β) (l : alist α β) : (l.insert s).val = l.val.dict_insert s :=
+@[simp] theorem insert_val (s : sigma β) (l : alist α β) : (insert s l).val = l.val.dict_insert s :=
 rfl
 
 end insert
@@ -109,6 +109,19 @@ instance [decidable_eq α] : has_append (alist α β) :=
 
 section append
 variables [decidable_eq α]
+
+@[simp] theorem append_val (l₁ l₂ : alist α β) : (l₁ ++ l₂).val = l₁.val.dict_append l₂.val :=
+rfl
+
+@[simp] theorem empty_append (l : alist α β) : ∅ ++ l = l :=
+eq_of_veq rfl
+
+@[simp] theorem append_empty (l : alist α β) : l ++ ∅ = l :=
+eq_of_veq $ by simp
+
+@[simp] theorem insert_append (s : sigma β) (l₁ l₂ : alist α β) :
+  insert s l₁ ++ l₂ = insert s (l₁ ++ l₂) :=
+eq_of_veq $ by simp
 
 end append
 
@@ -150,7 +163,7 @@ list.dict_lookup_eq_of_perm a l₁.property l₂.property p
 
 theorem perm_insert [decidable_eq α] (s : sigma β) (p : perm l₁ l₂) :
   perm (l₁.insert s) (l₂.insert s) :=
-list.perm_dict_insert s p
+list.perm_dict_insert s l₁.property l₂.property p
 
 theorem perm_erase [decidable_eq α] (a : α) (p : perm l₁ l₂) :
   perm (l₁.erase a) (l₂.erase a) :=
