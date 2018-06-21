@@ -15,12 +15,12 @@ quot.induction_on s $ λ _, nodup_of_nodup_keys
 
 @[simp] theorem nodup_keys_zero : @nodup_keys α β 0 := pairwise.nil _
 
-def dict_lookup [decidable_eq α] (a : α) (s : multiset (sigma β)) : multiset (β a) :=
-quot.lift_on s (λ l, (l.dict_lookup_all a : multiset (β a)))
-               (λ _ _, quot.sound ∘ perm_dict_lookup_all a)
+def klookup [decidable_eq α] (a : α) (s : multiset (sigma β)) : multiset (β a) :=
+quot.lift_on s (λ l, (l.klookup_all a : multiset (β a)))
+               (λ _ _, quot.sound ∘ perm_klookup_all a)
 
-def dict_erase [decidable_eq α] (a : α) (s : multiset (sigma β)) : multiset (sigma β) :=
-quot.lift_on s (λ l, (l.dict_erase_all a : multiset (sigma β)))
-               (λ _ _, quot.sound ∘ perm_dict_erase_all a)
+def kerase [decidable_eq α] (a : α) (s : multiset (sigma β)) : multiset (sigma β) :=
+quot.lift_on s (λ l, (l.kerase_all a : multiset (sigma β)))
+               (λ _ _, quot.sound ∘ perm_kerase_all a)
 
 end multiset

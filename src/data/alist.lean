@@ -6,9 +6,10 @@ universes u v
 def alist (α : Type u) (β : α → Type v) : Type (max u v) :=
 { l : list (sigma β) // l.nodup_keys }
 
-namespace alist
 variables {α : Type u} {β : α → Type v}
-variables {l₁ l₂ l₃ l₄ : alist α β}
+variables {a : α} {l l₁ l₂ l₃ l₄ : alist α β}
+
+namespace alist
 
 theorem eq_of_veq : ∀ {l₁ l₂ : alist α β}, l₁.val = l₂.val → l₁ = l₂
 | ⟨s, _⟩ ⟨t, _⟩ h := by congr; assumption
@@ -33,7 +34,7 @@ rfl
 end empty
 
 def lookup [decidable_eq α] (a : α) (l : alist α β) : option (β a) :=
-l.val.dict_lookup a
+l.val.klookup a
 
 section lookup
 variables [decidable_eq α]
@@ -48,29 +49,27 @@ by cases l; simp [lookup]
 end lookup
 
 def keys [decidable_eq α] (l : alist α β) : list α :=
-l.val.dict_keys
+l.val.keys
 
 section keys
 variables [decidable_eq α]
-variables {a : α} {l : alist α β}
 
 @[simp] theorem keys_empty : keys (∅ : alist α β) = [] :=
 rfl
 
 @[simp] theorem keys_nodup (l : alist α β) : l.keys.nodup :=
-list.dict_keys_nodup_of_nodup_keys l.property
+list.keys_nodup_of_nodup_keys l.property
 
 end keys
 
 def keyset [decidable_eq α] (l : alist α β) : finset α :=
-l.val.dict_keys.to_finset
+l.val.keys.to_finset
 
 instance [decidable_eq α] : has_mem α (alist α β) :=
 ⟨λ a l, a ∈ l.keys⟩
 
 section mem
 variables [decidable_eq α]
-variables {a : α} {l : alist α β}
 
 theorem mem_keys : a ∈ l = (a ∈ l.keys) :=
 rfl
@@ -84,25 +83,25 @@ by simp [mem_keys]
 end mem
 
 def erase [decidable_eq α] (a : α) (l : alist α β) : alist α β :=
-⟨l.val.dict_erase a, list.nodup_keys_dict_erase a l.property⟩
+⟨l.val.kerase a, list.nodup_keys_kerase a l.property⟩
 
 protected def insert [decidable_eq α] (s : sigma β) (l : alist α β) : alist α β :=
-⟨l.val.dict_insert s, list.nodup_keys_dict_insert s l.property⟩
+⟨l.val.kinsert s, list.nodup_keys_kinsert s l.property⟩
 
 instance [decidable_eq α] : has_insert (sigma β) (alist α β) :=
 ⟨alist.insert⟩
 
 section insert
 variables [decidable_eq α]
-variables {a : α} {l : alist α β}
 
-@[simp] theorem insert_val (s : sigma β) (l : alist α β) : (insert s l).val = l.val.dict_insert s :=
+@[simp] theorem insert_val (s : sigma β) (l : alist α β) :
+  (insert s l).val = l.val.kinsert s :=
 rfl
 
 end insert
 
 protected def append [decidable_eq α] (l₁ : alist α β) (l₂ : alist α β) : alist α β :=
-⟨l₁.val.dict_append l₂.val, list.nodup_keys_append l₁.property l₂.property⟩
+⟨l₁.val.kappend l₂.val, list.nodup_keys_kappend l₁.property l₂.property⟩
 
 instance [decidable_eq α] : has_append (alist α β) :=
 ⟨alist.append⟩
@@ -110,7 +109,7 @@ instance [decidable_eq α] : has_append (alist α β) :=
 section append
 variables [decidable_eq α]
 
-@[simp] theorem append_val (l₁ l₂ : alist α β) : (l₁ ++ l₂).val = l₁.val.dict_append l₂.val :=
+@[simp] theorem append_val (l₁ l₂ : alist α β) : (l₁ ++ l₂).val = l₁.val.kappend l₂.val :=
 rfl
 
 @[simp] theorem empty_append (l : alist α β) : ∅ ++ l = l :=
@@ -126,10 +125,13 @@ eq_of_veq $ by simp
 @[simp] theorem append_assoc (l₁ l₂ l₃ : alist α β) : (l₁ ++ l₂) ++ l₃ = l₁ ++ (l₂ ++ l₃) :=
 eq_of_veq $ by simp
 
+@[simp] theorem mem_append : a ∈ l₁ ++ l₂ ↔ a ∈ l₁ ∨ a ∈ l₂ :=
+by cases l₁; cases l₂; apply list.kmem_kappend
+
 end append
 
 def replace [decidable_eq α] (s : sigma β) (l : alist α β) : alist α β :=
-⟨l.val.dict_replace s, list.nodup_keys_dict_replace s l.property⟩
+⟨l.val.kreplace s, list.nodup_keys_kreplace s l.property⟩
 
 def perm (l₁ : alist α β) (l₂ : alist α β) : Prop :=
 list.perm l₁.1 l₂.1
@@ -158,34 +160,29 @@ list.perm_map sigma.fst p
 
 theorem eq_keyset_of_perm [decidable_eq α] (p : perm l₁ l₂) : l₁.keyset = l₂.keyset :=
 finset.eq_of_veq $ quot.sound $ list.perm_erase_dup_of_perm $
-  list.dict_keys_eq_of_perm l₁.property l₂.property p
+  list.perm_keys_of_perm l₁.property l₂.property p
 
 theorem eq_lookup_of_perm [decidable_eq α] (a : α) (p : perm l₁ l₂) :
   l₁.lookup a = l₂.lookup a :=
-list.dict_lookup_eq_of_perm a l₁.property l₂.property p
+list.klookup_eq_of_perm a l₁.property l₂.property p
 
 theorem perm_erase [decidable_eq α] (a : α) (p : perm l₁ l₂) :
   perm (l₁.erase a) (l₂.erase a) :=
-list.perm_dict_erase a l₁.property l₂.property p
+list.perm_kerase a l₁.property l₂.property p
 
 theorem perm_insert [decidable_eq α] (s : sigma β) (p : perm l₁ l₂) :
   perm (l₁.insert s) (l₂.insert s) :=
-list.perm_dict_insert s l₁.property l₂.property p
+list.perm_kinsert s l₁.property l₂.property p
 
 theorem perm_append [decidable_eq α] (p₁₂ : perm l₁ l₂) (p₃₄ : perm l₃ l₄) :
   perm (l₁ ++ l₃) (l₂ ++ l₄) :=
-list.perm_dict_append l₃.property l₄.property p₁₂ p₃₄
+list.perm_kappend l₃.property l₄.property p₁₂ p₃₄
 
 theorem perm_replace [decidable_eq α] (s : sigma β) (p : perm l₁ l₂) :
   perm (l₁.replace s) (l₂.replace s) :=
-list.perm_dict_replace s l₁.property l₂.property p
+list.perm_kreplace s l₁.property l₂.property p
 
-end alist
-
-namespace finset
-variables {α : Type u} {β : α → Type v}
-
-def of_alist (l : alist α β) : finset (sigma β) :=
+def to_finset (l : alist α β) : finset (sigma β) :=
 ⟨⟦l.val⟧, multiset.nodup_of_nodup_keys l.property⟩
 
-end finset
+end alist
