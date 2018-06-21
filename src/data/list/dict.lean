@@ -338,6 +338,10 @@ rfl
   l₁.dict_insert s d++ l₂ = (l₁ d++ l₂).dict_insert s :=
 by simp
 
+@[simp] theorem dict_append_assoc (l₁ l₂ l₃ : list (sigma β)) :
+  (l₁ d++ l₂) d++ l₃ = l₁ d++ (l₂ d++ l₃) :=
+by induction l₁ generalizing l₂ l₃; simp *
+
 theorem mem_dict_append : s ∈ l₁ d++ l₂ → s ∈ l₁ ∨ s ∈ l₂ :=
 begin
   induction l₁ generalizing l₂,
