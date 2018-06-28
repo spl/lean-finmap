@@ -788,4 +788,30 @@ end
 
 end kreplace
 
+/-- Key-based disjoint test for a list of dependent key-value pairs. -/
+def kdisjoint [decidable_eq α] (l₁ l₂ : list (sigma β)) : Prop :=
+∀ ⦃a : α⦄, a k∈ l₁ → a k∉ l₂
+
+section kdisjoint
+variables [decidable_eq α]
+
+@[simp] theorem nil_kdisjoint : [].kdisjoint l :=
+by simp [kdisjoint]
+
+@[simp] theorem kdisjoint_nil : l.kdisjoint [] :=
+by simp [kdisjoint]
+
+@[simp] theorem kdisjoint_cons : (hd :: tl).kdisjoint l ↔ hd.1 k∉ l ∧ tl.kdisjoint l :=
+by simp [kdisjoint, kmem]
+
+@[simp] theorem map_kappend {γ : Type*} (f : sigma β → γ)
+  (dj : l₁.kdisjoint l₂) : (l₁ k++ l₂).map f = l₁.map f ++ l₂.map f :=
+by induction l₁ with _ _ ih; [refl, {simp at dj, simp [dj.1, ih dj.2]}]
+
+theorem keys_kappend (dj : l₁.kdisjoint l₂) :
+  (l₁ k++ l₂).keys = l₁.keys ++ l₂.keys :=
+by simp [keys, dj]
+
+end kdisjoint
+
 end list
