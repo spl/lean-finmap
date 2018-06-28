@@ -108,13 +108,19 @@ by cases s; cases hd; simp [ne.symm h]
 end kmem
 
 /-- Key-based subset test for a list of dependent key-value pairs. -/
-def ksubset [decidable_eq α] (l₁ l₂ : list (sigma β)) :=
+def ksubset [decidable_eq α] (l₁ l₂ : list (sigma β)) : Prop :=
 ∀ ⦃a : α⦄, a k∈ l₁ → a k∈ l₂
 
 local infix ` k⊆ `:51 := ksubset
 
 section ksubset
 variables [decidable_eq α]
+
+@[simp] theorem ksubset.refl (l : list (sigma β)) : l k⊆ l :=
+λ _ h, h
+
+theorem ksubset.trans : l₁ k⊆ l₂ → l₂ k⊆ l₃ → l₁ k⊆ l₃ :=
+λ h₁ h₂ _ m, h₂ (h₁ m)
 
 theorem ksubset_of_sublist : ∀ {l₁ l₂ : list (sigma β)}, l₁ <+ l₂ → l₁ k⊆ l₂
 | _ _ sublist.slnil              _  h := h

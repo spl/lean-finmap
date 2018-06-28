@@ -82,6 +82,29 @@ by simp [mem_keys]
 
 end mem
 
+section preorder
+variables [decidable_eq α]
+
+instance : has_subset (alist α β) :=
+⟨λ l₁ l₂, l₁.1.ksubset l₂.1⟩
+
+@[simp] theorem subset.refl (l : alist α β) : l ⊆ l :=
+list.ksubset.refl l.1
+
+theorem subset.trans {l₁ l₂ l₃ : alist α β} : l₁ ⊆ l₂ → l₂ ⊆ l₃ → l₁ ⊆ l₃ :=
+list.ksubset.trans
+
+instance : has_ssubset (alist α β) :=
+⟨λ l₁ l₂, l₁ ⊆ l₂ ∧ ¬ l₂ ⊆ l₁⟩
+
+instance : preorder (alist α β) :=
+{ le       := (⊆),
+  le_refl  := subset.refl,
+  le_trans := @subset.trans _ _ _,
+  lt       := (⊂) }
+
+end preorder
+
 def erase [decidable_eq α] (a : α) (l : alist α β) : alist α β :=
 ⟨l.val.kerase a, list.nodup_keys_kerase a l.property⟩
 
