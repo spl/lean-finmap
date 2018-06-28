@@ -17,10 +17,16 @@ quot.lift_on f alist.keyset (λ _ _, alist.eq_keyset_of_perm)
 
 protected def mem [decidable_eq α] (a : α) (f : finmap α β) : Prop :=
 quot.lift_on f (has_mem.mem a)
-               (λ l₁ l₂ (p : alist.perm l₁ l₂), propext $ alist.mem_of_perm p)
+               (λ _ _, propext ∘ alist.mem_of_perm)
 
 instance [decidable_eq α] : has_mem α (finmap α β) :=
 ⟨finmap.mem⟩
+
+protected def subset [decidable_eq α] (f g : finmap α β) : Prop :=
+quotient.lift_on₂ f g (⊆) (λ _ _ _ _ p₁ p₂, propext $ alist.perm_subset p₁ p₂)
+
+instance [decidable_eq α] : has_subset (finmap α β) :=
+⟨finmap.subset⟩
 
 def lookup [decidable_eq α] (a : α) (f : finmap α β) : option (β a) :=
 quot.lift_on f (alist.lookup a) (λ _ _, alist.eq_lookup_of_perm a)

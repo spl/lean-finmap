@@ -116,6 +116,15 @@ local infix ` k⊆ `:51 := ksubset
 section ksubset
 variables [decidable_eq α]
 
+theorem keys_subset : l₁ k⊆ l₂ ↔ l₁.keys ⊆ l₂.keys :=
+iff.rfl
+
+@[simp] theorem cons_ksubset : hd :: tl k⊆ l ↔ hd.1 k∈ l ∧ tl k⊆ l :=
+by simp [ksubset, or_imp_distrib, forall_and_distrib]
+
+@[simp] theorem ksubset_cons : l k⊆ hd :: tl ↔ ∀ {a : α}, a k∈ l → hd.1 = a ∨ a k∈ tl :=
+by simp [ksubset]
+
 @[simp] theorem ksubset.refl (l : list (sigma β)) : l k⊆ l :=
 λ _ h, h
 
@@ -132,8 +141,49 @@ theorem ksubset_of_sublist : ∀ {l₁ l₂ : list (sigma β)}, l₁ <+ l₂ →
   | or.inr h := kmem_cons_of_kmem s (ksubset_of_sublist sl h)
   end
 
-theorem keys_subset : l₁ k⊆ l₂ ↔ l₁.keys ⊆ l₂.keys :=
-iff.rfl
+theorem ksubset_of_perm [decidable_eq α] (p : l₁ ~ l₂) : l₁ k⊆ l₂ :=
+begin
+  intro a,
+  induction p,
+  case list.perm.nil { exact id },
+  case list.perm.skip : hd tl₁ tl₂ p ih {
+    repeat {rw kmem_cons},
+    exact or.rec or.inl (or.inr ∘ ih)
+  },
+  case list.perm.swap : s₁ s₂ l {
+    repeat {rw kmem_cons},
+    rw or.left_comm,
+    exact id
+  },
+  case list.perm.trans : l₁ l₂ l₃ p₁₂ p₂₃ ih₁₂ ih₂₃ {
+    exact ih₂₃ ∘ ih₁₂
+  }
+end
+
+theorem kmem_of_perm [decidable_eq α] (p : l₁ ~ l₂) : a k∈ l₁ ↔ a k∈ l₂ :=
+⟨by apply ksubset_of_perm p, by apply ksubset_of_perm p.symm⟩
+
+theorem perm.ksubset_left (p : l₁ ~ l₂) : l k⊆ l₁ ↔ l k⊆ l₂ :=
+begin
+  induction p generalizing l,
+  case list.perm.nil { refl },
+  case list.perm.skip : hd tl₁ tl₂ p ih { simp [kmem_of_perm p] },
+  case list.perm.swap : s₁ s₂ l { simp [or.left_comm] },
+  case list.perm.trans : l₁ l₂ l₃ p₁₂ p₂₃ ih₁₂ ih₂₃ { exact ih₁₂.trans ih₂₃ }
+end
+
+theorem perm.ksubset_right (p : l₁ ~ l₂) : l₁ k⊆ l ↔ l₂ k⊆ l :=
+begin
+  induction p generalizing l,
+  case list.perm.nil { refl },
+  case list.perm.skip : hd tl₁ tl₂ p ih { simp [ih] },
+  case list.perm.swap : s₁ s₂ l { simp [and.left_comm] },
+  case list.perm.trans : l₁ l₂ l₃ p₁₂ p₂₃ ih₁₂ ih₂₃ { exact ih₁₂.trans ih₂₃ }
+end
+
+
+theorem perm_ksubset (p₁₃ : l₁ ~ l₃) (p₂₄ : l₂ ~ l₄) : l₁ k⊆ l₂ ↔ l₃ k⊆ l₄ :=
+p₂₄.ksubset_left.trans p₁₃.ksubset_right
 
 end ksubset
 
@@ -186,28 +236,6 @@ begin
     exact perm.trans (ih₁₂ nd₁ nd₂) (ih₂₃ nd₂ nd₃)
   }
 end
-
-theorem perm_ksubset [decidable_eq α] (p : l₁ ~ l₂) : l₁ k⊆ l₂ :=
-begin
-  intro a,
-  induction p,
-  case list.perm.nil { exact id },
-  case list.perm.skip : hd tl₁ tl₂ p ih {
-    repeat {rw kmem_cons},
-    exact or.rec or.inl (or.inr ∘ ih)
-  },
-  case list.perm.swap : s₁ s₂ l {
-    repeat {rw kmem_cons},
-    rw or.left_comm,
-    exact id
-  },
-  case list.perm.trans : l₁ l₂ l₃ p₁₂ p₂₃ ih₁₂ ih₂₃ {
-    exact ih₂₃ ∘ ih₁₂
-  }
-end
-
-theorem kmem_of_perm [decidable_eq α] (p : l₁ ~ l₂) : a k∈ l₁ ↔ a k∈ l₂ :=
-⟨by apply perm_ksubset p, by apply perm_ksubset p.symm⟩
 
 end nodup_keys
 
