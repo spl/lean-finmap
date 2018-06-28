@@ -185,6 +185,12 @@ theorem eq_keyset_of_perm [decidable_eq α] (p : perm l₁ l₂) : l₁.keyset =
 finset.eq_of_veq $ quot.sound $ list.perm_erase_dup_of_perm $
   list.perm_keys_of_perm l₁.property l₂.property p
 
+theorem perm_subset [decidable_eq α] (p : perm l₁ l₂) : l₁ ⊆ l₂ :=
+list.perm_ksubset p
+
+theorem mem_of_perm [decidable_eq α] (p : perm l₁ l₂) : a ∈ l₁ ↔ a ∈ l₂ :=
+list.kmem_of_perm p
+
 theorem eq_lookup_of_perm [decidable_eq α] (a : α) (p : perm l₁ l₂) :
   l₁.lookup a = l₂.lookup a :=
 list.klookup_eq_of_perm a l₁.property l₂.property p
