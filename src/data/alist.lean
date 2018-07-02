@@ -7,7 +7,7 @@ def alist (α : Type u) (β : α → Type v) : Type (max u v) :=
 { l : list (sigma β) // l.nodup_keys }
 
 variables {α : Type u} {β : α → Type v}
-variables {a : α} {l l₁ l₂ l₃ l₄ : alist α β}
+variables {a : α} {s : sigma β} {l l₁ l₂ l₃ l₄ : alist α β}
 
 namespace alist
 
@@ -120,6 +120,9 @@ variables [decidable_eq α]
 @[simp] theorem insert_val (s : sigma β) (l : alist α β) :
   (insert s l).val = l.val.kinsert s :=
 rfl
+
+@[simp] theorem mem_insert : a ∈ insert s l ↔ s.1 = a ∨ a ∈ l :=
+list.kmem_kinsert
 
 end insert
 

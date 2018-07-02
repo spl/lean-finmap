@@ -738,6 +738,9 @@ rfl
 @[simp] theorem kinsert_kappend : l₁.kinsert s k++ l₂ = (l₁ k++ l₂).kinsert s :=
 by simp
 
+@[simp] theorem kmem_kinsert : a k∈ l.kinsert s ↔ s.1 = a ∨ a k∈ l :=
+by by_cases h : s.1 = a; simp [h]
+
 @[simp] theorem nodup_keys_kinsert (s : sigma β) (nd : l.nodup_keys) :
   (l.kinsert s).nodup_keys :=
 (nodup_keys_cons_of_not_kmem _ (not_kmem_kerase_self nd)).mpr $ nodup_keys_kerase _ nd
