@@ -38,7 +38,7 @@ rfl
 variables [decidable_eq α]
 
 @[simp] theorem keys_iff_ne_key_of_mem :
-  (∀ (s : sigma β), s ∈ l → a ≠ s.1) ↔ a ∉ keys l :=
+  (∀ (s : sigma β), s ∈ l → a ≠ s.1) ↔ a ∉ l.keys :=
 by induction l; simp *
 
 end keys
@@ -107,23 +107,31 @@ by cases s; cases hd; simp [ne.symm h]
 
 end kmem
 
+@[simp] theorem forall_kmem_cons' [decidable_eq α] {p : α → Prop} :
+  (∀ (a : α), hd.1 = a ∨ a k∈ tl → p a) ↔ p hd.1 ∧ ∀ a k∈ tl, p a :=
+by simp [or_imp_distrib, forall_and_distrib]
+
+theorem forall_kmem_cons [decidable_eq α] {p : α → Prop} :
+  (∀ a k∈ hd :: tl, p a) ↔ p hd.1 ∧ ∀ a k∈ tl, p a :=
+by simp
+
 /-- Key-based subset test for a list of dependent key-value pairs. -/
 def ksubset [decidable_eq α] (l₁ l₂ : list (sigma β)) : Prop :=
-∀ ⦃a : α⦄, a k∈ l₁ → a k∈ l₂
+l₁.keys ⊆ l₂.keys
 
 local infix ` k⊆ `:51 := ksubset
 
 section ksubset
 variables [decidable_eq α]
 
-theorem keys_subset : l₁ k⊆ l₂ ↔ l₁.keys ⊆ l₂.keys :=
+theorem ksubset_def : l₁ k⊆ l₂ ↔ ∀ ⦃a : α⦄, a k∈ l₁ → a k∈ l₂ :=
 iff.rfl
 
 @[simp] theorem cons_ksubset : hd :: tl k⊆ l ↔ hd.1 k∈ l ∧ tl k⊆ l :=
-by simp [ksubset, or_imp_distrib, forall_and_distrib]
+by simp [ksubset_def]
 
 @[simp] theorem ksubset_cons : l k⊆ hd :: tl ↔ ∀ {a : α}, a k∈ l → hd.1 = a ∨ a k∈ tl :=
-by simp [ksubset]
+by simp [ksubset_def]
 
 @[simp] theorem ksubset.refl (l : list (sigma β)) : l k⊆ l :=
 λ _ h, h
@@ -141,9 +149,9 @@ theorem ksubset_of_sublist : ∀ {l₁ l₂ : list (sigma β)}, l₁ <+ l₂ →
   | or.inr h := kmem_cons_of_kmem s (ksubset_of_sublist sl h)
   end
 
-theorem ksubset_of_perm [decidable_eq α] (p : l₁ ~ l₂) : l₁ k⊆ l₂ :=
+theorem ksubset_of_perm (p : l₁ ~ l₂) : l₁ k⊆ l₂ :=
+ksubset_def.mpr $ λ a,
 begin
-  intro a,
   induction p,
   case list.perm.nil { exact id },
   case list.perm.skip : hd tl₁ tl₂ p ih {
@@ -160,7 +168,7 @@ begin
   }
 end
 
-theorem kmem_of_perm [decidable_eq α] (p : l₁ ~ l₂) : a k∈ l₁ ↔ a k∈ l₂ :=
+theorem kmem_of_perm (p : l₁ ~ l₂) : a k∈ l₁ ↔ a k∈ l₂ :=
 ⟨by apply ksubset_of_perm p, by apply ksubset_of_perm p.symm⟩
 
 theorem perm.ksubset_left (p : l₁ ~ l₂) : l k⊆ l₁ ↔ l k⊆ l₂ :=
@@ -185,10 +193,14 @@ end
 theorem perm_ksubset (p₁₃ : l₁ ~ l₃) (p₂₄ : l₂ ~ l₄) : l₁ k⊆ l₂ ↔ l₃ k⊆ l₄ :=
 p₂₄.ksubset_left.trans p₁₃.ksubset_right
 
+theorem ksubset_of_subperm {l₁ l₂ : list (sigma β)} : l₁ <+~ l₂ → l₁ k⊆ l₂
+| ⟨l, p, s⟩ := ksubset.trans (ksubset_of_perm p.symm) (ksubset_of_sublist s)
+
 end ksubset
 
 /-- No duplicate keys in a list of dependent key-value pairs. -/
-def nodup_keys : list (sigma β) → Prop := pairwise (sigma.on_fst (≠))
+def nodup_keys : list (sigma β) → Prop :=
+pairwise (sigma.on_fst (≠))
 
 section nodup_keys
 
@@ -334,8 +346,8 @@ The result is a list of all key-matching values. -/
 def klookup_all [decidable_eq α] (a : α) : list (sigma β) → list (β a)
 | []         := []
 | (hd :: tl) :=
-   let tl' := klookup_all tl in
-   if h : hd.1 = a then h.rec_on hd.2 :: tl' else tl'
+  let tl' := klookup_all tl in
+  if h : hd.1 = a then h.rec_on hd.2 :: tl' else tl'
 
 section klookup_all
 variables [decidable_eq α]
