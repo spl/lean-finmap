@@ -189,7 +189,6 @@ begin
   case list.perm.trans : l₁ l₂ l₃ p₁₂ p₂₃ ih₁₂ ih₂₃ { exact ih₁₂.trans ih₂₃ }
 end
 
-
 theorem perm_ksubset (p₁₃ : l₁ ~ l₃) (p₂₄ : l₂ ~ l₄) : l₁ k⊆ l₂ ↔ l₃ k⊆ l₄ :=
 p₂₄.ksubset_left.trans p₁₃.ksubset_right
 
@@ -725,7 +724,6 @@ theorem perm_kappend (nd₃ : l₃.nodup_keys) (nd₄ : l₄.nodup_keys)
 perm.trans (perm_kappend_left l₃ p₁₂) (perm_kappend_right l₂ nd₃ nd₄ p₃₄)
 
 end kappend
-
 
 /-- `cons` with `kerase` of the first `s`-key-matching pair -/
 def kinsert [decidable_eq α] (s : sigma β) (l : list (sigma β)) : list (sigma β) :=
