@@ -13,7 +13,7 @@ structure hashmap (α : Type u) [decidable_eq α] (β : α → Type v) :=
 /- Array of association list buckets -/
 (buckets : array n.val (alist α β))
 /- Each bucket `i` contains members such that that hash of each member is `i`. -/
-(hash_mem : ∀ {i a}, a ∈ buckets.read i → hash a = i)
+(hash_mem : ∀ {i a}, a ∈ (buckets.read i).keys → hash a = i)
 
 /-- Default number of buckets (8) -/
 def hashmap.default_n : ℕ+ :=

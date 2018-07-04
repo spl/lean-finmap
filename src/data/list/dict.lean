@@ -35,6 +35,9 @@ rfl
 @[simp] theorem keys_singleton : [s].keys = [s.1] :=
 rfl
 
+@[simp] theorem keys_append : (l₁ ++ l₂).keys = l₁.keys ++ l₂.keys :=
+by simp [keys]
+
 variables [decidable_eq α]
 
 @[simp] theorem keys_iff_ne_key_of_mem :
@@ -43,159 +46,15 @@ by induction l; simp *
 
 end keys
 
-/-- Key-based single-pair membership test for a list of dependent key-value
-pairs. This holds if at least one key is present. -/
-def kmem [decidable_eq α] (a : α) (l : list (sigma β)) : Prop :=
-a ∈ l.keys
-
-local infix ` k∈ `:51 := kmem
-local notation a ` k∉ `:51 l:51 := ¬ kmem a l
-
-section kmem
-variables [decidable_eq α]
-
-@[simp] theorem kmem_nil : a k∉ @list.nil (sigma β) :=
-by simp [kmem]
-
-@[simp] theorem kmem_cons : a k∈ hd :: tl ↔ hd.1 = a ∨ a k∈ tl :=
-by simp [kmem, eq_comm]
-
-@[simp] theorem kmem_cons_eq (h : hd.1 = a) : a k∈ hd :: tl :=
-kmem_cons.mpr $ or.inl h
-
-theorem kmem_of_ne_of_kmem_cons (h₁ : hd.1 ≠ a) (h₂ : a k∈ hd :: tl) : a k∈ tl :=
-or.elim (kmem_cons.mp h₂) (λ p, absurd p h₁) id
-
-@[simp] theorem kmem_append : a k∈ l₁ ++ l₂ ↔ a k∈ l₁ ∨ a k∈ l₂ :=
-by induction l₁; simp [*, or_assoc]
-
-instance decidable_kmem (a : α) (l : list (sigma β)) : decidable (a k∈ l) :=
-by unfold kmem; apply_instance
-
-theorem kmem_cons_of_kmem (hd : sigma β) : a k∈ tl → a k∈ hd :: tl :=
-by unfold kmem; rw keys_cons; exact mem_cons_of_mem hd.1
-
-theorem eq_or_kmem_of_kmem_cons : a k∈ hd :: tl → a = hd.1 ∨ a k∈ tl :=
-by unfold kmem; rw keys_cons; exact eq_or_mem_of_mem_cons
-
-theorem kmem_of_mem : s ∈ l → s.1 k∈ l :=
-begin
-  induction l,
-  case list.nil { simp },
-  case list.cons : hd tl ih { cases hd, intro h, simp at h, cases h; simp [h, ih] }
-end
-
-theorem exists_mem_of_kmem : a k∈ l → ∃ (b : β a), sigma.mk a b ∈ l :=
-begin
-  induction l,
-  case list.nil { simp },
-  case list.cons : hd tl ih {
-    intro h,
-    simp at h,
-    cases h with h h,
-    { cases hd with a₁ b₁, induction h, exact ⟨b₁, mem_cons_self ⟨a₁, b₁⟩ tl⟩ },
-    { cases ih h with b h, exact ⟨b, mem_cons_of_mem hd h⟩ }
-  }
-end
-
-theorem not_kmem_cons_of_ne_of_not_kmem (h₁ : hd.1 ≠ a) (h₂ : a k∉ tl) :
-  a k∉ hd :: tl :=
-by simp [h₁, h₂]
-
 theorem mem_of_ne_key_of_mem_cons (h : hd.1 ≠ s.1) : s ∈ hd :: tl → s ∈ tl :=
 by cases s; cases hd; simp [ne.symm h]
 
-end kmem
+theorem mem_keys_of_mem : s ∈ l → s.1 ∈ l.keys :=
+mem_map_of_mem sigma.fst
 
-@[simp] theorem forall_kmem_cons' [decidable_eq α] {p : α → Prop} :
-  (∀ (a : α), hd.1 = a ∨ a k∈ tl → p a) ↔ p hd.1 ∧ ∀ a k∈ tl, p a :=
-by simp [or_imp_distrib, forall_and_distrib]
-
-theorem forall_kmem_cons [decidable_eq α] {p : α → Prop} :
-  (∀ a k∈ hd :: tl, p a) ↔ p hd.1 ∧ ∀ a k∈ tl, p a :=
-by simp
-
-/-- Key-based subset test for a list of dependent key-value pairs. -/
-def ksubset [decidable_eq α] (l₁ l₂ : list (sigma β)) : Prop :=
-l₁.keys ⊆ l₂.keys
-
-local infix ` k⊆ `:51 := ksubset
-
-section ksubset
-variables [decidable_eq α]
-
-theorem ksubset_def : l₁ k⊆ l₂ ↔ ∀ ⦃a : α⦄, a k∈ l₁ → a k∈ l₂ :=
-iff.rfl
-
-@[simp] theorem cons_ksubset : hd :: tl k⊆ l ↔ hd.1 k∈ l ∧ tl k⊆ l :=
-by simp [ksubset_def]
-
-@[simp] theorem ksubset_cons : l k⊆ hd :: tl ↔ ∀ {a : α}, a k∈ l → hd.1 = a ∨ a k∈ tl :=
-by simp [ksubset_def]
-
-@[simp] theorem ksubset.refl (l : list (sigma β)) : l k⊆ l :=
-λ _ h, h
-
-theorem ksubset.trans : l₁ k⊆ l₂ → l₂ k⊆ l₃ → l₁ k⊆ l₃ :=
-λ h₁ h₂ _ m, h₂ (h₁ m)
-
-theorem ksubset_of_sublist : ∀ {l₁ l₂ : list (sigma β)}, l₁ <+ l₂ → l₁ k⊆ l₂
-| _ _ sublist.slnil              _  h := h
-| _ _ (sublist.cons  l₁ l₂ s sl) a₂ h :=
-  kmem_cons_of_kmem s (ksubset_of_sublist sl h)
-| _ _ (sublist.cons2 l₁ l₂ s sl) a₂ h :=
-  match kmem_cons.mp h with
-  | or.inl h := kmem_cons_eq h
-  | or.inr h := kmem_cons_of_kmem s (ksubset_of_sublist sl h)
-  end
-
-theorem ksubset_of_perm (p : l₁ ~ l₂) : l₁ k⊆ l₂ :=
-ksubset_def.mpr $ λ a,
-begin
-  induction p,
-  case list.perm.nil { exact id },
-  case list.perm.skip : hd tl₁ tl₂ p ih {
-    repeat {rw kmem_cons},
-    exact or.rec or.inl (or.inr ∘ ih)
-  },
-  case list.perm.swap : s₁ s₂ l {
-    repeat {rw kmem_cons},
-    rw or.left_comm,
-    exact id
-  },
-  case list.perm.trans : l₁ l₂ l₃ p₁₂ p₂₃ ih₁₂ ih₂₃ {
-    exact ih₂₃ ∘ ih₁₂
-  }
-end
-
-theorem kmem_of_perm (p : l₁ ~ l₂) : a k∈ l₁ ↔ a k∈ l₂ :=
-⟨by apply ksubset_of_perm p, by apply ksubset_of_perm p.symm⟩
-
-theorem perm.ksubset_left (p : l₁ ~ l₂) : l k⊆ l₁ ↔ l k⊆ l₂ :=
-begin
-  induction p generalizing l,
-  case list.perm.nil { refl },
-  case list.perm.skip : hd tl₁ tl₂ p ih { simp [kmem_of_perm p] },
-  case list.perm.swap : s₁ s₂ l { simp [or.left_comm] },
-  case list.perm.trans : l₁ l₂ l₃ p₁₂ p₂₃ ih₁₂ ih₂₃ { exact ih₁₂.trans ih₂₃ }
-end
-
-theorem perm.ksubset_right (p : l₁ ~ l₂) : l₁ k⊆ l ↔ l₂ k⊆ l :=
-begin
-  induction p generalizing l,
-  case list.perm.nil { refl },
-  case list.perm.skip : hd tl₁ tl₂ p ih { simp [ih] },
-  case list.perm.swap : s₁ s₂ l { simp [and.left_comm] },
-  case list.perm.trans : l₁ l₂ l₃ p₁₂ p₂₃ ih₁₂ ih₂₃ { exact ih₁₂.trans ih₂₃ }
-end
-
-theorem perm_ksubset (p₁₃ : l₁ ~ l₃) (p₂₄ : l₂ ~ l₄) : l₁ k⊆ l₂ ↔ l₃ k⊆ l₄ :=
-p₂₄.ksubset_left.trans p₁₃.ksubset_right
-
-theorem ksubset_of_subperm {l₁ l₂ : list (sigma β)} : l₁ <+~ l₂ → l₁ k⊆ l₂
-| ⟨l, p, s⟩ := ksubset.trans (ksubset_of_perm p.symm) (ksubset_of_sublist s)
-
-end ksubset
+theorem exists_mem_of_mem_keys (h : a ∈ l.keys) : ∃ (b : β a), sigma.mk a b ∈ l :=
+let ⟨⟨a', b'⟩, m, e⟩ := exists_of_mem_map h in
+eq.rec_on e (exists.intro b' m)
 
 /-- No duplicate keys in a list of dependent key-value pairs. -/
 def nodup_keys : list (sigma β) → Prop :=
@@ -207,8 +66,8 @@ section nodup_keys
 pairwise.nil _
 
 @[simp] theorem nodup_keys_cons [decidable_eq α] :
-  (hd :: tl).nodup_keys ↔ hd.1 k∉ tl ∧ tl.nodup_keys :=
-by simp [nodup_keys, kmem, sigma.on_fst]
+  (hd :: tl).nodup_keys ↔ hd.1 ∉ tl.keys ∧ tl.nodup_keys :=
+by simp [nodup_keys, sigma.on_fst]
 
 theorem nodup_of_nodup_keys : l.nodup_keys → l.nodup :=
 pairwise.imp $ λ ⟨a₁, b₁⟩ ⟨a₂, b₂⟩ (h : a₁ ≠ a₂), by simp [h]
@@ -219,8 +78,8 @@ theorem keys_nodup_of_nodup_keys : l.nodup_keys → l.keys.nodup :=
 theorem perm_nodup_keys (p : l₁ ~ l₂) : l₁.nodup_keys ↔ l₂.nodup_keys :=
 perm_pairwise (@sigma.on_fst.symm α β (≠) (@ne.symm α)) p
 
-@[simp] theorem nodup_keys_cons_of_not_kmem [decidable_eq α] (hd : sigma β) (h : hd.1 k∉ tl) :
-  (hd :: tl).nodup_keys ↔ tl.nodup_keys :=
+@[simp] theorem nodup_keys_cons_of_not_mem_keys [decidable_eq α] (hd : sigma β)
+  (h : hd.1 ∉ tl.keys) : (hd :: tl).nodup_keys ↔ tl.nodup_keys :=
 begin
   induction tl,
   case list.nil { simp },
@@ -284,8 +143,9 @@ by simp [h]
     | or.inr ⟨b, h₂⟩ := or.inr ⟨b, (klookup_cons_ne h₁).trans h₂⟩
     end
 
-theorem klookup_not_kmem : a k∉ l ↔ klookup a l = none :=
-by induction l with hd; [simp, {by_cases hd.1 = a; simp *}]
+theorem klookup_not_mem_keys : a ∉ l.keys ↔ klookup a l = none :=
+by induction l with hd _ ih;
+   [simp, {by_cases h : hd.1 = a; [simp [h], simp [h, ne.symm h, ih]]}]
 
 theorem klookup_iff_mem (nd : l.nodup_keys) : s.2 ∈ l.klookup s.1 ↔ s ∈ l :=
 begin
@@ -305,7 +165,7 @@ begin
         simp at h,
         cases h with h h,
         { simp [h] },
-        { exact absurd (kmem_of_mem h) nd.1 } } },
+        { exact absurd (mem_keys_of_mem h) nd.1 } } },
     { rw [klookup_cons_ne h, mem_cons_iff],
       split,
       { exact or.inr ∘ (ih nd.2).mp },
@@ -329,7 +189,7 @@ begin
   case list.perm.swap : s₁ s₂ l nd₂₁ nd₁₂ {
     simp at nd₂₁ nd₁₂,
     by_cases h₂ : s₂.1 = a,
-    { induction h₂, simp [ne.symm nd₁₂.1] },
+    { induction h₂, simp [nd₁₂.1] },
     { by_cases h₁ : s₁.1 = a; simp [h₂, h₁] }
   },
   case list.perm.trans : l₁ l₂ l₃ p₁₂ p₂₃ ih₁₂ ih₂₃ nd₁ nd₃ {
@@ -414,12 +274,13 @@ by by_cases h : hd.1 = a; simp [h]
 @[simp] theorem mem_kerase_nil : s ∈ @kerase _ β _ a [] ↔ false :=
 by simp
 
-@[simp] theorem kerase_of_not_kmem (h : a k∉ l) : l.kerase a = l :=
-by induction l with _ _ ih; [refl, {simp at h, simp [h.1, ih h.2]}]
+@[simp] theorem kerase_of_not_mem_keys (h : a ∉ l.keys) : l.kerase a = l :=
+by induction l with _ _ ih;
+   [refl, {simp at h, simp [h.1, ne.symm h.1, ih h.2]}]
 
-theorem exists_kerase_eq (h : a k∈ l) :
+theorem exists_kerase_eq (h : a ∈ l.keys) :
   ∃ (b : β a) (l₁ l₂ : list (sigma β)),
-    a k∉ l₁ ∧
+    a ∉ l₁.keys ∧
     l = l₁ ++ ⟨a, b⟩ :: l₂ ∧
     l.kerase a = l₁ ++ l₂ :=
 begin
@@ -431,17 +292,17 @@ begin
       exact ⟨hd.2, [], tl, by simp, by cases hd; refl, by simp⟩ },
     { simp at h,
       cases h,
-      case or.inl : h { contradiction },
+      case or.inl : h { exact absurd h (ne.symm e) },
       case or.inr : h {
         rcases ih h with ⟨b, tl₁, tl₂, h₁, h₂, h₃⟩,
-        exact ⟨b, hd :: tl₁, tl₂, not_kmem_cons_of_ne_of_not_kmem e h₁,
+        exact ⟨b, hd :: tl₁, tl₂, not_mem_cons_of_ne_of_not_mem (ne.symm e) h₁,
                by rw h₂; refl, by simp [e, h₃]⟩
       } }
   }
 end
 
 theorem kerase_sublist (a : α) (l : list (sigma β)) : l.kerase a <+ l :=
-if h : a k∈ l then
+if h : a ∈ l.keys then
   match l, l.kerase a, exists_kerase_eq h with
   | _, _, ⟨_, _, _, _, rfl, rfl⟩ := by simp
   end
@@ -456,7 +317,7 @@ theorem mem_of_mem_kerase : s ∈ l.kerase a → s ∈ l :=
 
 @[simp] theorem mem_kerase_of_ne (h : s.1 ≠ a) : s ∈ l.kerase a ↔ s ∈ l :=
 iff.intro mem_of_mem_kerase $ λ p,
-  if q : a k∈ l then
+  if q : a ∈ l.keys then
     match l, l.kerase a, exists_kerase_eq q, p with
     | _, _, ⟨_, _, _, _, rfl, rfl⟩, p :=
       by clear _match; cases s; simpa [h] using p
@@ -464,54 +325,55 @@ iff.intro mem_of_mem_kerase $ λ p,
   else
     by simp [q, p]
 
-theorem kerase_ksubset (a : α) (l : list (sigma β)) : l.kerase a k⊆ l :=
-ksubset_of_sublist (kerase_sublist a l)
+theorem kerase_subset_keys (a : α) (l : list (sigma β)) : (l.kerase a).keys ⊆ l.keys :=
+subset_of_sublist (map_sublist_map _ (kerase_sublist a l))
 
-theorem kmem_of_kmem_kerase : a k∈ l.kerase a₁ → a k∈ l :=
-@kerase_ksubset _ _ _ _ _ _
+theorem mem_keys_of_mem_keys_kerase : a₁ ∈ (l.kerase a₂).keys → a₁ ∈ l.keys :=
+@kerase_subset_keys _ _ _ _ _ _
 
-@[simp] theorem kmem_kerase_of_ne (h : a₂ ≠ a₁) : a₁ k∈ l.kerase a₂ ↔ a₁ k∈ l :=
-iff.intro kmem_of_kmem_kerase $ λ p,
-  if q : a₂ k∈ l then
+@[simp] theorem mem_keys_kerase_of_ne (h : a₂ ≠ a₁) : a₁ ∈ (l.kerase a₂).keys ↔ a₁ ∈ l.keys :=
+iff.intro mem_keys_of_mem_keys_kerase $ λ p,
+  if q : a₂ ∈ l.keys then
     match l, l.kerase a₂, exists_kerase_eq q, p with
-    | _, _, ⟨_, _, _, _, rfl, rfl⟩, p := by simpa [h] using p
+    | _, _, ⟨_, _, _, _, rfl, rfl⟩, p := by simpa [ne.symm h] using p
     end
   else
     by simp [q, p]
 
 theorem kerase_append_left : ∀ {l₁ : list (sigma β)} (l₂ : list (sigma β)),
-  a k∈ l₁ → (l₁ ++ l₂).kerase a = l₁.kerase a ++ l₂
+  a ∈ l₁.keys → (l₁ ++ l₂).kerase a = l₁.kerase a ++ l₂
 | []          _  h  := by cases h
 | (hd :: tl₁) l₂ h₁ :=
   if h₂ : hd.1 = a then
     by simp [h₂]
   else
-    by simp at h₁; cases h₁; [contradiction, simp [h₂, kerase_append_left l₂ h₁]]
+    by simp at h₁; cases h₁;
+       [exact absurd h₁ (ne.symm h₂), simp [h₂, kerase_append_left l₂ h₁]]
 
 theorem kerase_append_right : ∀ {l₁ : list (sigma β)} (l₂ : list (sigma β)),
-  a k∉ l₁ → (l₁ ++ l₂).kerase a = l₁ ++ l₂.kerase a
+  a ∉ l₁.keys → (l₁ ++ l₂).kerase a = l₁ ++ l₂.kerase a
 | []         _  h := rfl
-| (_ :: tl₁) l₂ h := by simp at h; simp [h.1, kerase_append_right l₂ h.2]
+| (_ :: tl₁) l₂ h := by simp at h; simp [ne.symm h.1, kerase_append_right l₂ h.2]
 
 theorem kerase_comm (a₁ a₂ : α) (l : list (sigma β)) :
   (l.kerase a₁).kerase a₂ = (l.kerase a₂).kerase a₁ :=
 if h : a₂ = a₁ then
   by simp [h]
-else if ha₁ : a₁ k∈ l then
-  if ha₂ : a₂ k∈ l then
+else if ha₁ : a₁ ∈ l.keys then
+  if ha₂ : a₂ ∈ l.keys then
     match l, l.kerase a₁, exists_kerase_eq ha₁, ha₂ with
     | _, _, ⟨b₁, l₁, l₂, a₁_nin_l₁, rfl, rfl⟩, a₂_in_l₁_app_l₂ :=
-      if h' : a₂ k∈ l₁ then
+      if h' : a₂ ∈ l₁.keys then
         by simp [kerase_append_left _ h',
-                 kerase_append_right _ (mt (kmem_kerase_of_ne h).mp a₁_nin_l₁)]
+                 kerase_append_right _ (mt (mem_keys_kerase_of_ne h).mp a₁_nin_l₁)]
       else
         by simp [kerase_append_right _ h', kerase_append_right _ a₁_nin_l₁,
                  @kerase_cons_ne _ _ a₂ ⟨a₁, b₁⟩ _ _ (ne.symm h)]
     end
   else
-    by simp [ha₂, mt kmem_of_kmem_kerase ha₂]
+    by simp [ha₂, mt mem_keys_of_mem_keys_kerase ha₂]
 else
-  by simp [ha₁, mt kmem_of_kmem_kerase ha₁]
+  by simp [ha₁, mt mem_keys_of_mem_keys_kerase ha₁]
 
 @[simp] theorem nodup_keys_kerase (a : α) :
   l.nodup_keys → (l.kerase a).nodup_keys :=
@@ -524,12 +386,12 @@ begin
     by_cases h : hd.1 = a,
     { simp [h, nd.2] },
     { rw [kerase_cons_ne h, nodup_keys_cons],
-      exact ⟨mt (kmem_kerase_of_ne (ne.symm h)).mp nd.1, ih nd.2⟩ }
+      exact ⟨mt (mem_keys_kerase_of_ne (ne.symm h)).mp nd.1, ih nd.2⟩ }
   }
 end
 
-@[simp] theorem not_kmem_kerase_self (nd : l.nodup_keys) :
-  a k∉ l.kerase a :=
+@[simp] theorem not_mem_keys_kerase_self (nd : l.nodup_keys) :
+  a ∉ (l.kerase a).keys :=
 begin
   induction l,
   case list.nil { simp },
@@ -537,7 +399,7 @@ begin
     simp at nd,
     by_cases h : hd.1 = a,
     { induction h, simp [nd.1] },
-    { simp [h, ih nd.2] }
+    { simp [h, ne.symm h, ih nd.2] }
   }
 end
 
@@ -549,9 +411,9 @@ begin
   case list.cons : hd tl ih {
     simp at nd,
     by_cases h₁ : hd.1 = a,
-    { by_cases h₂ : a k∈ tl,
+    { by_cases h₂ : a ∈ tl.keys,
       { induction h₁, exact absurd h₂ nd.1 },
-      { simp [h₁, klookup_not_kmem.mp h₂] } },
+      { simp [h₁, klookup_not_mem_keys.mp h₂] } },
     { simp [h₁, ih nd.2] }
   }
 end
@@ -567,7 +429,7 @@ begin
     rcases kerase_cons a hd tl with ⟨he, p⟩ | ⟨hn, p⟩,
     { induction he,
       simp [p] at h,
-      exact ne.symm (ne_of_mem_of_not_mem (kmem_of_mem h) nd.1) },
+      exact ne.symm (ne_of_mem_of_not_mem (mem_keys_of_mem h) nd.1) },
     { simp [hn] at h,
       cases h with h h,
       { induction h, exact ne.symm hn },
@@ -587,7 +449,7 @@ begin
   case list.perm.swap : s₁ s₂ l nd₂₁ nd₁₂ {
     simp at nd₁₂,
     by_cases h₂ : s₂.1 = a,
-    { induction h₂, simp [ne.symm nd₁₂.1] },
+    { induction h₂, simp [nd₁₂.1] },
     { by_cases h₁ : s₁.1 = a; simp [h₂, h₁, perm.swap] }
   },
   case list.perm.trans : l₁ l₂ l₃ p₁₂ p₂₃ ih₁₂ ih₂₃ nd₁ nd₃ {
@@ -688,8 +550,9 @@ begin
   }
 end
 
-@[simp] theorem kmem_kappend : a k∈ l₁ k++ l₂ ↔ a k∈ l₁ ∨ a k∈ l₂ :=
-by induction l₁ with hd generalizing l₂; [simp, {by_cases hd.1 = a; simp *}]
+@[simp] theorem mem_keys_kappend : a ∈ (l₁ k++ l₂).keys ↔ a ∈ l₁.keys ∨ a ∈ l₂.keys :=
+by induction l₁ with hd _ ih generalizing l₂;
+   [simp, {by_cases h : hd.1 = a; [simp [h], simp [h, ne.symm h, ih]]}]
 
 theorem nodup_keys_kappend (nd₁ : l₁.nodup_keys) (nd₂ : l₂.nodup_keys) :
   (l₁ k++ l₂).nodup_keys :=
@@ -738,12 +601,16 @@ rfl
 @[simp] theorem kinsert_kappend : l₁.kinsert s k++ l₂ = (l₁ k++ l₂).kinsert s :=
 by simp
 
-@[simp] theorem kmem_kinsert : a k∈ l.kinsert s ↔ s.1 = a ∨ a k∈ l :=
-by by_cases h : s.1 = a; simp [h]
+@[simp] theorem mem_kinsert :
+  s₁ ∈ kinsert s₂ l ↔ s₁ = s₂ ∨ s₁ ∈ l.kerase s₂.1 :=
+by simp [kinsert]
+
+@[simp] theorem mem_keys_kinsert : a ∈ (l.kinsert s).keys ↔ s.1 = a ∨ a ∈ l.keys :=
+by by_cases h : s.1 = a; [simp [h], simp [h, ne.symm h]]
 
 @[simp] theorem nodup_keys_kinsert (s : sigma β) (nd : l.nodup_keys) :
   (l.kinsert s).nodup_keys :=
-(nodup_keys_cons_of_not_kmem _ (not_kmem_kerase_self nd)).mpr $ nodup_keys_kerase _ nd
+(nodup_keys_cons_of_not_mem_keys _ (not_mem_keys_kerase_self nd)).mpr $ nodup_keys_kerase _ nd
 
 theorem perm_kinsert (s : sigma β) (nd₁ : l₁.nodup_keys) (nd₂ : l₂.nodup_keys) (p : l₁ ~ l₂) :
   l₁.kinsert s ~ l₂.kinsert s :=
@@ -790,9 +657,9 @@ begin
   }
 end
 
-theorem kmem_of_kmem_kreplace_ne (h₁ : a ≠ s.1) (h₂ : a k∈ l.kreplace s) : a k∈ l :=
-let ⟨b, h₃⟩ := exists_mem_of_kmem h₂ in
-@kmem_of_mem _ _ ⟨a, b⟩ _ _ (mem_of_mem_kreplace_ne (ne.symm h₁) h₃)
+theorem mem_keys_of_mem_keys_kreplace_ne (h₁ : a ≠ s.1) (h₂ : a ∈ (l.kreplace s).keys) : a ∈ l.keys :=
+let ⟨b, h₃⟩ := exists_mem_of_mem_keys h₂ in
+@mem_keys_of_mem _ _ ⟨a, b⟩ _ (mem_of_mem_kreplace_ne (ne.symm h₁) h₃)
 
 @[simp] theorem nodup_keys_kreplace (s : sigma β) :
   l.nodup_keys → (l.kreplace s).nodup_keys :=
@@ -804,7 +671,7 @@ begin
     simp at nd,
     by_cases p : hd.1 = s.1,
     { rw p at nd, simp [p, nd.1, nd.2] },
-    { simp [p, nd.1, ih nd.2, mt (kmem_of_kmem_kreplace_ne p)] }
+    { simp [p, nd.1, ih nd.2, mt (mem_keys_of_mem_keys_kreplace_ne p)] }
   }
 end
 
@@ -823,7 +690,7 @@ begin
     { rw kreplace_cons_eq h₂,
       by_cases h₁ : s₁.1 = s.1,
       { rw kreplace_cons_eq h₁,
-        exact absurd (h₂.trans h₁.symm) nd₁₂.1 },
+        exact absurd (h₁.trans h₂.symm) nd₁₂.1 },
       { simp [h₁, h₂, perm.swap] } },
     { by_cases h₁ : s₁.1 = s.1; simp [h₁, h₂, perm.swap] }
   },
@@ -835,30 +702,17 @@ end
 
 end kreplace
 
-/-- Key-based disjoint test for a list of dependent key-value pairs. -/
-def kdisjoint [decidable_eq α] (l₁ l₂ : list (sigma β)) : Prop :=
-∀ ⦃a : α⦄, a k∈ l₁ → a k∉ l₂
-
-section kdisjoint
+section disjoint
 variables [decidable_eq α]
 
-@[simp] theorem nil_kdisjoint : [].kdisjoint l :=
-by simp [kdisjoint]
-
-@[simp] theorem kdisjoint_nil : l.kdisjoint [] :=
-by simp [kdisjoint]
-
-@[simp] theorem kdisjoint_cons : (hd :: tl).kdisjoint l ↔ hd.1 k∉ l ∧ tl.kdisjoint l :=
-by simp [kdisjoint, kmem]
-
 @[simp] theorem map_kappend {γ : Type*} (f : sigma β → γ)
-  (dj : l₁.kdisjoint l₂) : (l₁ k++ l₂).map f = l₁.map f ++ l₂.map f :=
-by induction l₁ with _ _ ih; [refl, {simp at dj, simp [dj.1, ih dj.2]}]
+  (dj : disjoint l₁.keys l₂.keys) : (l₁ k++ l₂).map f = l₁.map f ++ l₂.map f :=
+by induction l₁ with _ _ ih; [refl, {simp at dj, simp [dj.1, ih dj.2.symm]}]
 
-theorem keys_kappend (dj : l₁.kdisjoint l₂) :
+theorem keys_kappend (dj : disjoint l₁.keys l₂.keys) :
   (l₁ k++ l₂).keys = l₁.keys ++ l₂.keys :=
 by simp [keys, dj]
 
-end kdisjoint
+end disjoint
 
 end list

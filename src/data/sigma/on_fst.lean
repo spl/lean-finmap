@@ -2,6 +2,12 @@ namespace sigma
 universes u v
 variables {α : Type u} {β : α → Type v}
 
+theorem eq_fst {s₁ s₂ : sigma β} : s₁ = s₂ → s₁.1 = s₂.1 :=
+by cases s₁; cases s₂; cc
+
+theorem eq_snd {s₁ s₂ : sigma β} : s₁ = s₂ → s₁.2 == s₂.2 :=
+by cases s₁; cases s₂; cc
+
 /-- A relation `R` on `fst` values lifted to the `sigma`. -/
 def on_fst (R : α → α → Prop) (s₁ s₂ : sigma β) : Prop :=
 R s₁.1 s₂.1

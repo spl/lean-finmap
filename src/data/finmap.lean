@@ -15,11 +15,11 @@ instance [decidable_eq α] [∀ a, decidable_eq (β a)] : decidable_eq (finmap �
 def keys [decidable_eq α] (f : finmap α β) : finset α :=
 quot.lift_on f alist.keyset (λ _ _, alist.eq_keyset_of_perm)
 
-protected def mem [decidable_eq α] (a : α) (f : finmap α β) : Prop :=
+protected def mem (a : sigma β) (f : finmap α β) : Prop :=
 quot.lift_on f (has_mem.mem a)
                (λ _ _, propext ∘ alist.mem_of_perm)
 
-instance [decidable_eq α] : has_mem α (finmap α β) :=
+instance : has_mem (sigma β) (finmap α β) :=
 ⟨finmap.mem⟩
 
 protected def empty : finmap α β :=
@@ -30,16 +30,12 @@ instance : has_emptyc (finmap α β) := ⟨finmap.empty⟩
 section empty
 variables [decidable_eq α]
 
-@[simp] theorem not_mem_empty (a : α) : a ∉ (∅ : finmap α β) :=
+@[simp] theorem not_mem_empty (s : sigma β) : s ∉ (∅ : finmap α β) :=
 id
 
 end empty
 
-protected def subset [decidable_eq α] (f g : finmap α β) : Prop :=
-quotient.lift_on₂ f g (⊆) (λ _ _ _ _ p₁ p₂, propext $ alist.perm_subset p₁ p₂)
-
-instance [decidable_eq α] : has_subset (finmap α β) :=
-⟨finmap.subset⟩
+instance : has_subset (finmap α β) := ⟨λ f g, ∀ ⦃s : sigma β⦄, s ∈ f → s ∈ g⟩
 
 def lookup [decidable_eq α] (a : α) (f : finmap α β) : option (β a) :=
 quot.lift_on f (alist.lookup a) (λ _ _, alist.eq_lookup_of_perm a)
@@ -54,9 +50,9 @@ quot.lift_on f (quot.mk _ ∘ alist.insert s)
 
 section insert
 variables [decidable_eq α]
-variables {a : α} {s : sigma β} {f : finmap α β}
+variables {s₁ s₂ : sigma β} {f : finmap α β}
 
-@[simp] theorem mem_insert : a ∈ insert s f ↔ s.1 = a ∨ a ∈ f :=
+@[simp] theorem mem_insert : s₁ ∈ insert s₂ f ↔ s₁ = s₂ ∨ s₁ ∈ erase s₂.1 f :=
 quot.induction_on f $ λ l, alist.mem_insert
 
 end insert
