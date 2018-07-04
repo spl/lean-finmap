@@ -582,9 +582,9 @@ theorem perm_kappend_right : ∀ (l : list (sigma β)) {l₁ l₂ : list (sigma 
                            (nodup_keys_kerase hd.1 nd₂)
                            (perm_kerase hd.1 nd₁ nd₂ p))]
 
-theorem perm_kappend (nd₃ : l₃.nodup_keys) (nd₄ : l₄.nodup_keys)
-  (p₁₂ : l₁ ~ l₂) (p₃₄ : l₃ ~ l₄) : l₁ k++ l₃ ~ l₂ k++ l₄ :=
-perm.trans (perm_kappend_left l₃ p₁₂) (perm_kappend_right l₂ nd₃ nd₄ p₃₄)
+theorem perm_kappend (nd₂ : l₂.nodup_keys) (nd₄ : l₄.nodup_keys)
+  (p₁₃ : l₁ ~ l₃) (p₂₄ : l₂ ~ l₄) : l₁ k++ l₂ ~ l₃ k++ l₄ :=
+perm.trans (perm_kappend_left l₂ p₁₃) (perm_kappend_right l₃ nd₂ nd₄ p₂₄)
 
 end kappend
 
@@ -714,5 +714,33 @@ theorem keys_kappend (dj : disjoint l₁.keys l₂.keys) :
 by simp [keys, dj]
 
 end disjoint
+
+variables {p : list α → Prop}
+
+def subtype_perm (l₁ l₂ : subtype p) : Prop :=
+l₁.val ~ l₂.val
+
+@[refl] protected theorem subtype_perm.refl (l : subtype p) : subtype_perm l l :=
+perm.refl l.val
+
+@[symm] protected theorem subtype_perm.symm {l₁ l₂ : subtype p}
+  (ps : subtype_perm l₁ l₂) : subtype_perm l₂ l₁ :=
+perm.symm ps
+
+@[trans] protected theorem subtype_perm.trans {l₁ l₂ l₃ : subtype p}
+  (ps : subtype_perm l₁ l₂) (qs : subtype_perm l₂ l₃) : subtype_perm l₁ l₃ :=
+perm.trans ps qs
+
+instance decidable_subtype_perm [decidable_eq α] (l₁ l₂ : subtype p) :
+  decidable (subtype_perm l₁ l₂) :=
+list.decidable_perm l₁.val l₂.val
+
+theorem subtype_perm.equivalence (p : list α → Prop) :
+  equivalence (@subtype_perm _ p) :=
+mk_equivalence (@subtype_perm _ p) (@subtype_perm.refl _ p)
+  (@subtype_perm.symm _ p) (@subtype_perm.trans _ p)
+
+instance subtype_setoid (p : list α → Prop) : setoid (subtype p) :=
+setoid.mk (@subtype_perm _ p) (subtype_perm.equivalence p)
 
 end list

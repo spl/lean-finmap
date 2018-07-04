@@ -1,31 +1,27 @@
-import data.alist
+import data.finset data.list.dict data.quot
 
 universes u v
 
 def finmap (α : Type u) (β : α → Type v) : Type (max u v) :=
-quotient (alist.setoid α β)
+quotient (@list.subtype_setoid (sigma β) list.nodup_keys)
 
 namespace finmap
 variables {α : Type u} {β : α → Type v}
 
 instance [decidable_eq α] [∀ a, decidable_eq (β a)] : decidable_eq (finmap α β)
-| f g := quotient.rec_on_subsingleton₂ f g $
-  λ _ _, decidable_of_iff' _ quotient.eq
+| f g := quotient.rec_on_subsingleton₂ f g $ λ _ _, decidable_of_iff' _ quotient.eq
 
 def keys [decidable_eq α] (f : finmap α β) : finset α :=
-quot.lift_on f alist.keyset (λ _ _, alist.eq_keyset_of_perm)
-
-protected def mem (a : sigma β) (f : finmap α β) : Prop :=
-quot.lift_on f (has_mem.mem a)
-               (λ _ _, propext ∘ alist.mem_of_perm)
+quot.lift_on f
+  (list.to_finset ∘ list.keys ∘ subtype.val)
+  (λ l₁ l₂, finset.eq_of_veq ∘ quot.sound ∘ list.perm_erase_dup_of_perm ∘
+    list.perm_keys_of_perm l₁.property l₂.property)
 
 instance : has_mem (sigma β) (finmap α β) :=
-⟨finmap.mem⟩
+⟨λ s f, quot.lift_on f (has_mem.mem s ∘ subtype.val) (λ _ _, propext ∘ list.mem_of_perm)⟩
 
-protected def empty : finmap α β :=
-⟦∅⟧
-
-instance : has_emptyc (finmap α β) := ⟨finmap.empty⟩
+instance : has_emptyc (finmap α β) :=
+⟨⟦⟨[], list.nodup_keys_nil⟩⟧⟩
 
 section empty
 variables [decidable_eq α]
@@ -35,35 +31,41 @@ id
 
 end empty
 
-instance : has_subset (finmap α β) := ⟨λ f g, ∀ ⦃s : sigma β⦄, s ∈ f → s ∈ g⟩
+instance : has_subset (finmap α β) :=
+⟨λ f g, ∀ ⦃s : sigma β⦄, s ∈ f → s ∈ g⟩
 
 def lookup [decidable_eq α] (a : α) (f : finmap α β) : option (β a) :=
-quot.lift_on f (alist.lookup a) (λ _ _, alist.eq_lookup_of_perm a)
+quot.lift_on f
+  (list.klookup a ∘ subtype.val)
+  (λ l₁ l₂, list.klookup_eq_of_perm a l₁.property l₂.property)
 
 def erase [decidable_eq α] (a : α) (f : finmap α β) : finmap α β :=
-quot.lift_on f (quot.mk _ ∘ alist.erase a)
-               (λ _ _, quot.sound ∘ alist.perm_erase a)
+quot.lift_on f
+  (λ l, ⟦subtype.mk (l.val.kerase a) (list.nodup_keys_kerase a l.property)⟧)
+  (λ l₁ l₂, quot.sound ∘ list.perm_kerase a l₁.property l₂.property)
 
 def insert [decidable_eq α] (s : sigma β) (f : finmap α β) : finmap α β :=
-quot.lift_on f (quot.mk _ ∘ alist.insert s)
-               (λ _ _, quot.sound ∘ alist.perm_insert s)
+quot.lift_on f
+  (λ l, ⟦subtype.mk (l.val.kinsert s) (list.nodup_keys_kinsert s l.property)⟧)
+  (λ l₁ l₂, quot.sound ∘ list.perm_kinsert s l₁.property l₂.property)
 
 section insert
 variables [decidable_eq α]
 variables {s₁ s₂ : sigma β} {f : finmap α β}
 
 @[simp] theorem mem_insert : s₁ ∈ insert s₂ f ↔ s₁ = s₂ ∨ s₁ ∈ erase s₂.1 f :=
-quot.induction_on f $ λ l, alist.mem_insert
+quot.induction_on f $ λ _, list.mem_kinsert
 
 end insert
 
 def replace [decidable_eq α] (s : sigma β) (f : finmap α β) : finmap α β :=
-quot.lift_on f (quot.mk _ ∘ alist.replace s)
-               (λ _ _, quot.sound ∘ alist.perm_replace s)
+quot.lift_on f
+  (λ l, ⟦subtype.mk (l.val.kreplace s) (list.nodup_keys_kreplace s l.property)⟧)
+  (λ l₁ l₂, quot.sound ∘ list.perm_kreplace s l₁.property l₂.property)
 
 def union [decidable_eq α] (f : finmap α β) (g : finmap α β) : finmap α β :=
 quotient.lift_on₂ f g
-  (λ l₁ l₂, ⟦l₁ ++ l₂⟧)
-  (λ _ _ _ _ p₁ p₂, quot.sound $ alist.perm_append p₁ p₂)
+  (λ l₁ l₂, ⟦subtype.mk (l₁.val.kappend l₂.val) (list.nodup_keys_kappend l₁.property l₂.property)⟧)
+  (λ l₁ l₂ l₃ l₄ p₁₃ p₂₄, quot.sound $ list.perm_kappend l₂.property l₄.property p₁₃ p₂₄)
 
 end finmap

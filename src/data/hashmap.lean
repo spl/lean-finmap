@@ -1,4 +1,4 @@
-import data.alist
+import data.finmap
 import data.pnat
 
 universes u v
@@ -11,7 +11,7 @@ structure hashmap (α : Type u) [decidable_eq α] (β : α → Type v) :=
 /- Hash function -/
 (hash : α → fin n.val)
 /- Array of association list buckets -/
-(buckets : array n.val (alist α β))
+(buckets : array n.val (finmap α β))
 /- Each bucket `i` contains members such that that hash of each member is `i`. -/
 (hash_mem : ∀ {i a}, a ∈ (buckets.read i).keys → hash a = i)
 
