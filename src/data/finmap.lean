@@ -63,6 +63,20 @@ quot.lift_on f
   (λ l, ⟦subtype.mk (l.val.kreplace s) (list.nodup_keys_kreplace s l.property)⟧)
   (λ l₁ l₂, quot.sound ∘ list.perm_kreplace s l₁.property l₂.property)
 
+section
+variables {α₁ : Type u} {β₁ : α₁ → Type v} {α₂ : Type u} {β₂ : α₂ → Type v}
+
+def map (g : sigma β₁ → sigma β₂) (gi : sigma.fst_injective g) (f : finmap α₁ β₁) :
+  finmap α₂ β₂ :=
+quot.lift_on f
+  (λ l, ⟦subtype.mk (list.map g l.val) (list.nodup_keys_map gi l.property)⟧)
+  (λ l₁ l₂, quot.sound ∘ list.perm_map g)
+
+end
+
+def map_val {β₁ β₂ : α → Type v} (g : ∀ (a : α), β₁ a → β₂ a) : finmap α β₁ → finmap α β₂ :=
+map (sigma.map_snd g) (sigma.fst_injective_snd g)
+
 def union [decidable_eq α] (f : finmap α β) (g : finmap α β) : finmap α β :=
 quotient.lift_on₂ f g
   (λ l₁ l₂, ⟦subtype.mk (l₁.val.kappend l₂.val) (list.nodup_keys_kappend l₁.property l₂.property)⟧)

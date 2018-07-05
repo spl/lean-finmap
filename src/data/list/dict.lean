@@ -72,8 +72,30 @@ by simp [nodup_keys, sigma.on_fst]
 theorem nodup_of_nodup_keys : l.nodup_keys → l.nodup :=
 pairwise.imp $ λ ⟨a₁, b₁⟩ ⟨a₂, b₂⟩ (h : a₁ ≠ a₂), by simp [h]
 
-theorem keys_nodup_of_nodup_keys : l.nodup_keys → l.keys.nodup :=
-(pairwise_map sigma.fst).mpr
+@[simp] theorem nodup_keys_iff : l.keys.nodup ↔ l.nodup_keys :=
+pairwise_map sigma.fst
+
+section
+variables {α₁ : Type u} {α₂ : Type u} {β₁ : α₁ → Type v} {β₂ : α₂ → Type v}
+
+theorem nodup_keys_of_nodup_keys_map {l : list (sigma β₁)} {f : sigma β₁ → sigma β₂}
+  (fs : sigma.fst_stable f) : nodup_keys (map f l) → nodup_keys l :=
+pairwise_of_pairwise_map f $ λ s t, mt (@fs s t)
+
+theorem nodup_keys_map {l : list (sigma β₁)} {f : sigma β₁ → sigma β₂}
+  (fi : sigma.fst_injective f) : l.nodup_keys → (l.map f).nodup_keys :=
+pairwise_map_of_pairwise f (λ s t (h : s ∈ l ∧ t ∈ l ∧ s.1 ≠ t.1), mt (@fi s t) h.2.2) ∘
+  pairwise.and_mem.mp
+
+theorem nodup_keys_map_iff {l : list (sigma β₁)} {f : sigma β₁ → sigma β₂}
+  (fs : sigma.fst_stable f) (fi : sigma.fst_injective f) : (l.map f).nodup_keys ↔ l.nodup_keys :=
+⟨nodup_keys_of_nodup_keys_map fs, nodup_keys_map fi⟩
+
+end
+
+theorem nodup_keys_map_snd_iff {β₁ β₂ : α → Type v} {l : list (sigma β₁)}
+  (f : ∀ (a : α), β₁ a → β₂ a) : (l.map (sigma.map_snd f)).nodup_keys ↔ l.nodup_keys :=
+nodup_keys_map_iff (sigma.fst_stable_snd f) (sigma.fst_injective_snd f)
 
 theorem perm_nodup_keys (p : l₁ ~ l₂) : l₁.nodup_keys ↔ l₂.nodup_keys :=
 perm_pairwise (@sigma.on_fst.symm α β (≠) (@ne.symm α)) p
