@@ -50,6 +50,9 @@ variables {R : α → α → Prop} {s₁ s₂ : sigma β}
 @[simp] theorem on_fst_eq : on_fst R s₁ s₂ = R s₁.1 s₂.1 :=
 rfl
 
+instance [d : decidable_rel R] : decidable_rel (@on_fst α β R)
+| s₁ s₂ := @d s₁.1 s₂.1
+
 theorem on_fst.refl (h : reflexive R) : reflexive (@on_fst α β R) :=
 λ s, h s.1
 
