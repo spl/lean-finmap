@@ -327,6 +327,9 @@ def keys (f : finmap α β) : finset α :=
 @[simp] theorem keys_empty : keys (∅ : finmap α β) = ∅ :=
 rfl
 
+@[simp] theorem keys_val {f : finmap α β} : (keys f).val = f.val.keys :=
+rfl
+
 end keys
 
 end finmap
