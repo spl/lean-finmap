@@ -1,6 +1,5 @@
 import data.list.dict
 import data.multiset
-import data.quot.hrec_on
 
 namespace multiset
 universes u v

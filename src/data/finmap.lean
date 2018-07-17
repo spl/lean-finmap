@@ -167,7 +167,7 @@ theorem exists_mem_of_ne_empty {s : finmap α β} (h : s ≠ ∅) : ∃ a : sigm
 exists_mem_of_ne_zero (mt val_eq_zero.mp h)
 
 @[simp] lemma coe_empty : ↑(∅ : finmap α β) = (∅ : set (sigma β)) :=
-by simp [set.set_eq_def]
+by simp [set.ext_iff]
 
 end empty
 
@@ -194,7 +194,7 @@ theorem singleton_inj {a b : sigma β} : ι a = ι b ↔ a = b :=
 @[simp] theorem singleton_ne_empty (a : sigma β) : ι a ≠ ∅ := ne_empty_of_mem (mem_singleton_self _)
 
 @[simp] lemma coe_singleton (a : sigma β) : ↑(ι a) = ({a} : set (sigma β)) :=
-by simp [set.set_eq_def]
+by simp [set.ext_iff]
 
 /- erase -/
 
