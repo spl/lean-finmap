@@ -156,7 +156,7 @@ section map
 variables {α₁ : Type u} {β₁ : α₁ → Type v} {α₂ : Type u} {β₂ : α₂ → Type v} {f : sigma β₁ → sigma β₂}
 variables {m : multiset (sigma β₁)}
 
-theorem nodup_keys_map (fi : sigma.fst_injective f) : m.nodup_keys → (m.map f).nodup_keys :=
+theorem nodup_keys_map (fi : sigma.injective f) : m.nodup_keys → (m.map f).nodup_keys :=
 quotient.induction_on m $ λ _, nodup_keys_map fi
 
 end map
