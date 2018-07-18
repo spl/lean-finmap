@@ -315,19 +315,6 @@ mem_map.mpr ⟨_, p, rfl⟩
 
 end map
 
-/- map_snd -/
-
-section map_snd
-variables {β₁ β₂ : α → Type v}
-
-def map_snd (g : ∀ (a : α), β₁ a → β₂ a) : finmap α β₁ → finmap α β₂ :=
-map (sigma.embedding.mk₂ g)
-
-@[simp] theorem map_val_empty (g : ∀ (a : α), β₁ a → β₂ a) : map_snd g ∅ = ∅ :=
-rfl
-
-end map_snd
-
 /- keys -/
 
 section keys
