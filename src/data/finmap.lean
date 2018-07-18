@@ -294,23 +294,23 @@ end union
 /- map -/
 
 section map
-variables {α₁ : Type u} {β₁ : α₁ → Type v} {α₂ : Type u} {β₂ : α₂ → Type v} {g : sigma β₁ → sigma β₂}
+variables {α₁ : Type u} {β₁ : α₁ → Type v} {α₂ : Type u} {β₂ : α₂ → Type v}
 
-def map (h : sigma.injective g) (f : finmap α₁ β₁) : finmap α₂ β₂ :=
-⟨f.val.map g, nodup_keys_map h f.nodup_keys⟩
+def map (g : β₁ s↪ β₂) (f : finmap α₁ β₁) : finmap α₂ β₂ :=
+⟨f.val.map g, nodup_keys_map g.inj f.nodup_keys⟩
 
-@[simp] theorem map_val (h : sigma.injective g) (f : finmap α₁ β₁) : (f.map h).val = f.val.map g :=
+@[simp] theorem map_val (g : β₁ s↪ β₂) (f : finmap α₁ β₁) : (f.map g).val = f.val.map g :=
 rfl
 
-@[simp] theorem map_empty (h : sigma.injective g) : map h ∅ = ∅ :=
+@[simp] theorem map_empty (g : β₁ s↪ β₂) : map g ∅ = ∅ :=
 rfl
 
-variables {h : sigma.injective g} {f : finmap α₁ β₁} {s₁ : sigma β₁} {s₂ : sigma β₂}
+variables {g : β₁ s↪ β₂} {f : finmap α₁ β₁} {s₁ : sigma β₁} {s₂ : sigma β₂}
 
-@[simp] theorem mem_map : s₂ ∈ f.map h ↔ ∃ s₁ ∈ f, g s₁ = s₂ :=
+@[simp] theorem mem_map : s₂ ∈ f.map g ↔ ∃ s₁ ∈ f, g s₁ = s₂ :=
 by simp [mem_def]
 
-@[simp] theorem mem_map_of_mem (h : sigma.injective g) (p : s₁ ∈ f) : g s₁ ∈ f.map h :=
+@[simp] theorem mem_map_of_mem (p : s₁ ∈ f) : g s₁ ∈ f.map g :=
 mem_map.mpr ⟨_, p, rfl⟩
 
 end map
@@ -321,7 +321,7 @@ section map_snd
 variables {β₁ β₂ : α → Type v}
 
 def map_snd (g : ∀ (a : α), β₁ a → β₂ a) : finmap α β₁ → finmap α β₂ :=
-map (sigma.map_snd_injective g)
+map (sigma.embedding.mk₂ g)
 
 @[simp] theorem map_val_empty (g : ∀ (a : α), β₁ a → β₂ a) : map_snd g ∅ = ∅ :=
 rfl

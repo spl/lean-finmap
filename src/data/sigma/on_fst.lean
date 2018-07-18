@@ -29,9 +29,35 @@ def injective (f : sigma β₁ → sigma β₂) : Prop :=
 
 end
 
+/-- A function on `sigma`s bundled with its `fst`-injectivity property. -/
+structure embedding {α₁ α₂ : Type u} (β₁ : α₁ → Type v) (β₂ : α₂ → Type v) :=
+(to_fun : sigma β₁ → sigma β₂)
+(inj    : injective to_fun)
+
+infixr ` s↪ `:25 := embedding
+
+namespace embedding
+variables {α₁ α₂ : Type u} {β₁ : α₁ → Type v} {β₂ : α₂ → Type v}
+
+instance : has_coe_to_fun (β₁ s↪ β₂) :=
+⟨_, embedding.to_fun⟩
+
+@[simp] theorem to_fun_eq_coe (f : β₁ s↪ β₂) : f.to_fun = f :=
+rfl
+
+@[simp] theorem coe_fn_mk (f : β₁ s↪ β₂) (i : injective f) :
+  (mk f i : sigma β₁ → sigma β₂) = f :=
+rfl
+
+theorem inj' : ∀ (f : β₁ s↪ β₂), injective f
+| ⟨_, h⟩ := h
+
+end embedding
+
 section
 variables {α : Type u} {β₁ β₂ : α → Type v}
 
+/-- Map `id` over `fst` and a function over `snd`. -/
 def map_snd (f : ∀ (a : α), β₁ a → β₂ a) : sigma β₁ → sigma β₂ :=
 have sigma β₁ → sigma (id β₂) := map id f, by exact this
 
@@ -44,6 +70,10 @@ theorem map_snd_functional (f : ∀ (a : α), β₁ a → β₂ a) : functional 
 
 theorem map_snd_injective (f : ∀ (a : α), β₁ a → β₂ a) : injective (map_snd f) :=
 λ _ _, (map_snd_fst_iff f).mp
+
+/-- Construct an `embedding` with `id` on `fst`. -/
+def embedding.mk₂ (f : ∀ (a : α), β₁ a → β₂ a) : embedding β₁ β₂ :=
+⟨_, map_snd_injective f⟩
 
 end
 
@@ -71,31 +101,6 @@ theorem rel.trans (h : transitive R) : transitive (@rel _ β R) :=
 λ s₁ s₂ s₃ (p : R s₁.1 s₂.1) (q : R s₂.1 s₃.1), h p q
 
 end
-
-/-- A function on `sigma`s bundled with its `fst`-injectivity property. -/
-structure embedding {α₁ α₂ : Type u} (β₁ : α₁ → Type v) (β₂ : α₂ → Type v) :=
-(to_fun : sigma β₁ → sigma β₂)
-(inj    : injective to_fun)
-
-infixr ` s↪ `:25 := embedding
-
-namespace embedding
-variables {α₁ α₂ : Type u} {β₁ : α₁ → Type v} {β₂ : α₂ → Type v}
-
-instance : has_coe_to_fun (β₁ s↪ β₂) :=
-⟨_, embedding.to_fun⟩
-
-@[simp] theorem to_fun_eq_coe (f : β₁ s↪ β₂) : f.to_fun = f :=
-rfl
-
-@[simp] theorem coe_fn_mk (f : β₁ s↪ β₂) (i : injective f) :
-  (mk f i : sigma β₁ → sigma β₂) = f :=
-rfl
-
-theorem inj' : ∀ (f : β₁ s↪ β₂), injective f
-| ⟨_, h⟩ := h
-
-end embedding
 
 section
 variables {α : Type u} {β : α → Type v}
