@@ -1,5 +1,7 @@
 import data.finset data.multiset.dict
 
+local attribute [-simp] sigma.forall sigma.exists
+
 open multiset
 
 universes u v
@@ -148,22 +150,22 @@ rfl
 @[simp] theorem not_mem_empty (s : sigma β) : s ∉ (∅ : finmap α β) :=
 id
 
-@[simp] theorem ne_empty_of_mem {a : sigma β} {s : finmap α β} (h : a ∈ s) : s ≠ ∅
-| e := not_mem_empty a $ e ▸ h
+@[simp] theorem ne_empty_of_mem {s : sigma β} {f : finmap α β} (h : s ∈ f) : f ≠ ∅
+| e := not_mem_empty s $ e ▸ h
 
-@[simp] theorem empty_subset (s : finmap α β) : ∅ ⊆ s :=
+@[simp] theorem empty_subset (f : finmap α β) : ∅ ⊆ f :=
 zero_subset _
 
-theorem eq_empty_of_forall_not_mem {s : finmap α β} (H : ∀x, x ∉ s) : s = ∅ :=
+theorem eq_empty_of_forall_not_mem {f : finmap α β} (H : ∀x, x ∉ f) : f = ∅ :=
 eq_of_veq (eq_zero_of_forall_not_mem H)
 
-@[simp] theorem val_eq_zero {s : finmap α β} : s.val = 0 ↔ s = ∅ :=
-@val_inj _ _ s ∅
+@[simp] theorem val_eq_zero {f : finmap α β} : f.val = 0 ↔ f = ∅ :=
+@val_inj _ _ f ∅
 
-theorem subset_empty {s : finmap α β} : s ⊆ ∅ ↔ s = ∅ :=
+theorem subset_empty {f : finmap α β} : f ⊆ ∅ ↔ f = ∅ :=
 subset_zero.trans val_eq_zero
 
-theorem exists_mem_of_ne_empty {s : finmap α β} (h : s ≠ ∅) : ∃ a : sigma β, a ∈ s :=
+theorem exists_mem_of_ne_empty {f : finmap α β} (h : f ≠ ∅) : ∃ s : sigma β, s ∈ f :=
 exists_mem_of_ne_zero (mt val_eq_zero.mp h)
 
 @[simp] lemma coe_empty : ↑(∅ : finmap α β) = (∅ : set (sigma β)) :=
@@ -173,13 +175,13 @@ end empty
 
 /- singleton -/
 
-/-- `singleton a` is the set `{a}` containing `a` and nothing else. -/
+/-- `singleton s` is the set `{s}` containing `s` and nothing else. -/
 def singleton (s : sigma β) : finmap α β :=
 ⟨⟦[s]⟧, nodup_keys_singleton s⟩
 
 local prefix `ι`:90 := singleton
 
-@[simp] theorem singleton_val (a : sigma β) : (ι a).val = a :: 0 := rfl
+@[simp] theorem singleton_val (s : sigma β) : (ι s).val = s :: 0 := rfl
 
 @[simp] theorem mem_singleton {a b : sigma β} : b ∈ ι a ↔ b = a :=
 by simp [singleton]
@@ -294,24 +296,33 @@ end union
 /- map -/
 
 section map
-variables {α₁ : Type u} {β₁ : α₁ → Type v} {α₂ : Type u} {β₂ : α₂ → Type v}
+variables {α₁ α₂ α₃ : Type u} {β₁ : α₁ → Type v} {β₂ : α₂ → Type v} {β₃ : α₃ → Type v}
 
-def map (g : β₁ s↪ β₂) (f : finmap α₁ β₁) : finmap α₂ β₂ :=
-⟨f.val.map g, nodup_keys_map g.inj f.nodup_keys⟩
+def map (p : β₁ s↪ β₂) (f : finmap α₁ β₁) : finmap α₂ β₂ :=
+⟨f.val.map p, nodup_keys_map p.inj f.nodup_keys⟩
 
-@[simp] theorem map_val (g : β₁ s↪ β₂) (f : finmap α₁ β₁) : (f.map g).val = f.val.map g :=
+@[simp] theorem map_val (p : β₁ s↪ β₂) (f : finmap α₁ β₁) : (f.map p).val = f.val.map p :=
 rfl
 
-@[simp] theorem map_empty (g : β₁ s↪ β₂) : map g ∅ = ∅ :=
+@[simp] theorem map_empty (p : β₁ s↪ β₂) : map p ∅ = ∅ :=
 rfl
 
-variables {g : β₁ s↪ β₂} {f : finmap α₁ β₁} {s₁ : sigma β₁} {s₂ : sigma β₂}
+variables {p : β₁ s↪ β₂} {q : β₂ s↪ β₃} {f g : finmap α₁ β₁} {s₁ : sigma β₁} {s₂ : sigma β₂}
 
-@[simp] theorem mem_map : s₂ ∈ f.map g ↔ ∃ s₁ ∈ f, g s₁ = s₂ :=
+@[simp] theorem mem_map : s₂ ∈ f.map p ↔ ∃ s₁ ∈ f, p s₁ = s₂ :=
 by simp [mem_def]
 
-@[simp] theorem mem_map_of_mem (p : s₁ ∈ f) : g s₁ ∈ f.map g :=
-mem_map.mpr ⟨_, p, rfl⟩
+@[simp] theorem mem_map_of_mem (h : s₁ ∈ f) : p s₁ ∈ f.map p :=
+mem_map.mpr ⟨_, h, rfl⟩
+
+theorem map_refl : f.map (sigma.embedding.refl _) = f :=
+ext.mpr $ by simp [sigma.embedding.refl]
+
+theorem map_map : (f.map p).map q = f.map (p.trans q) :=
+eq_of_veq $ by simp [erase_dup_map_erase_dup_eq]
+
+theorem map_subset_map (h : f ⊆ g) : f.map p ⊆ g.map p :=
+by simp [subset_def, map_subset_map h]
 
 end map
 

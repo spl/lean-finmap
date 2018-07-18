@@ -45,7 +45,7 @@ instance : has_coe_to_fun (β₁ s↪ β₂) :=
 @[simp] theorem to_fun_eq_coe (f : β₁ s↪ β₂) : f.to_fun = f :=
 rfl
 
-@[simp] theorem coe_fn_mk (f : β₁ s↪ β₂) (i : injective f) :
+@[simp] theorem coe_fn_mk (f : sigma β₁ → sigma β₂) (i : injective f) :
   (mk f i : sigma β₁ → sigma β₂) = f :=
 rfl
 
