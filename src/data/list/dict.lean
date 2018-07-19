@@ -591,7 +591,7 @@ rfl
   (l₁ k++ l₂) k++ l₃ = l₁ k++ (l₂ k++ l₃) :=
 by induction l₁ generalizing l₂ l₃; simp *
 
-theorem mem_kappend : s ∈ l₁ k++ l₂ → s ∈ l₁ ∨ s ∈ l₂ :=
+theorem mem_of_mem_kappend : s ∈ l₁ k++ l₂ → s ∈ l₁ ∨ s ∈ l₂ :=
 begin
   induction l₁ generalizing l₂,
   case list.nil { simp },
@@ -607,6 +607,25 @@ begin
     }
   }
 end
+
+theorem mem_kappend_left (l₂ : list (sigma β)) (h : s ∈ l₁) : s ∈ l₁ k++ l₂ :=
+by induction l₁ generalizing l₂; simp at h; cases h; simp *
+
+theorem mem_kappend_right (h₁ : s.1 ∉ l₁.keys) (h₂ : s ∈ l₂) : s ∈ l₁ k++ l₂ :=
+by induction l₁ generalizing l₂; simp at h₁; cases h₁; simp *
+
+theorem mem_kappend_of_disjoint_keys (dj : disjoint l₁.keys l₂.keys) (h : s ∈ l₁ ∨ s ∈ l₂) :
+  s ∈ l₁ k++ l₂ :=
+begin
+  cases h with h h,
+  { exact mem_kappend_left _ h },
+  { by_cases p : s.1 ∈ l₁.keys,
+    { exact absurd h (mt mem_keys_of_mem (dj p)) },
+    { exact mem_kappend_right p h } }
+end
+
+@[simp] theorem mem_kappend_iff (dj : disjoint l₁.keys l₂.keys) : s ∈ l₁ k++ l₂ ↔ s ∈ l₁ ∨ s ∈ l₂ :=
+⟨mem_of_mem_kappend, mem_kappend_of_disjoint_keys dj⟩
 
 @[simp] theorem mem_keys_kappend : a ∈ (l₁ k++ l₂).keys ↔ a ∈ l₁.keys ∨ a ∈ l₂.keys :=
 by induction l₁ with hd _ ih generalizing l₂;

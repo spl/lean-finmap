@@ -198,6 +198,21 @@ theorem singleton_inj {a b : sigma β} : ι a = ι b ↔ a = b :=
 @[simp] lemma coe_singleton (a : sigma β) : ↑(ι a) = ({a} : set (sigma β)) :=
 by simp [set.ext_iff]
 
+/- keys -/
+
+section keys
+
+def keys (f : finmap α β) : finset α :=
+⟨f.val.keys, nodup_keys_iff.mpr f.nodup_keys⟩
+
+@[simp] theorem keys_val (f : finmap α β) : f.keys.val = f.val.keys :=
+rfl
+
+@[simp] theorem keys_empty : keys (∅ : finmap α β) = ∅ :=
+rfl
+
+end keys
+
 /- erase -/
 
 section erase
@@ -291,6 +306,10 @@ protected def union (f : finmap α β) (g : finmap α β) : finmap α β :=
 instance : has_union (finmap α β) :=
 ⟨finmap.union⟩
 
+@[simp] theorem mem_union [decidable_eq α] {s : sigma β}
+  {f g : finmap α β} (dk : disjoint f.keys g.keys) : s ∈ f ∪ g ↔ s ∈ f ∨ s ∈ g :=
+mem_kunion f.nodup_keys g.nodup_keys (finset.disjoint_val.mp dk)
+
 end union
 
 /- map -/
@@ -325,17 +344,5 @@ theorem map_subset_map (h : f ⊆ g) : f.map p ⊆ g.map p :=
 by simp [subset_def, map_subset_map h]
 
 end map
-
-/- keys -/
-
-section keys
-
-def keys (f : finmap α β) : finset α :=
-⟨f.val.keys, nodup_keys_iff.mpr f.nodup_keys⟩
-
-@[simp] theorem keys_empty : keys (∅ : finmap α β) = ∅ :=
-rfl
-
-end keys
 
 end finmap

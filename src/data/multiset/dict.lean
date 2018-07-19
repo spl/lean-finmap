@@ -21,6 +21,9 @@ nodup_keys_singleton
 def keys : multiset (sigma β) → multiset α :=
 map sigma.fst
 
+@[simp] theorem keys_coe (l : list (sigma β)) : keys (l : multiset (sigma β)) = (l.keys : multiset α) :=
+rfl
+
 theorem nodup_keys_iff {s : multiset (sigma β)} : s.keys.nodup ↔ s.nodup_keys :=
 quotient.induction_on s $ λ _, list.nodup_keys_iff
 
@@ -145,6 +148,10 @@ def kunion : m₁.nodup_keys → m₂.nodup_keys → multiset (sigma β) :=
       hfunext (by rw perm_nodup_keys p₂₄) $
         λ (d₂ : l₂.nodup_keys) (d₄ : l₄.nodup_keys) _,
         heq_of_eq $ quotient.sound $ perm_kappend d₂ d₄ p₁₃ p₂₄
+
+@[simp] theorem mem_kunion {s : sigma β} : ∀ (d₁ : m₁.nodup_keys) (d₂ : m₂.nodup_keys),
+  disjoint m₁.keys m₂.keys → (s ∈ kunion d₁ d₂ ↔ s ∈ m₁ ∨ s ∈ m₂) :=
+quotient.induction_on₂ m₁ m₂ $ λ _ _ _ _, mem_kappend_iff
 
 @[simp] theorem nodup_keys_kunion :
   ∀ (d₁ : m₁.nodup_keys) (d₂ : m₂.nodup_keys), (kunion d₁ d₂).nodup_keys :=
