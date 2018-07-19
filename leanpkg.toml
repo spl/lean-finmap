@@ -4,4 +4,4 @@ version = "0.0.1"
 path = "src"
 
 [dependencies]
-mathlib = {git = "https://github.com/leanprover/mathlib.git", rev = "1e0c38b01bb3d6de9397658bd3a7fd1690750cc1"}
+mathlib = {git = "https://github.com/leanprover/mathlib.git", rev = "2b9780ada05046fc663c1f8dce31fcc252db149d"}
