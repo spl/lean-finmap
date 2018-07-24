@@ -12,10 +12,10 @@ by cases s₁; cases s₂; cc
 theorem eq_snd {s₁ s₂ : sigma β} : s₁ = s₂ → s₁.2 == s₂.2 :=
 by cases s₁; cases s₂; cc
 
-def functional₂ (β : α → Type v) : Prop :=
+def functional (β : α → Type v) : Prop :=
 ∀ ⦃s t : sigma β⦄ (h : s.1 = t.1), (eq.rec_on h s.2 : β t.1) = t.2
 
-theorem injective_fst (h : functional₂ β) : function.injective (@fst _ β) :=
+theorem injective_fst (h : functional β) : function.injective (@fst _ β) :=
 λ s₁ s₂ p, sigma.eq p (h p)
 
 end
@@ -25,12 +25,12 @@ variables {α₁ α₂ : Type u} {β₁ : α₁ → Type v} {β₂ : α₂ → T
 
 /-- A function on `sigma`s that is functional on `fst`s (preserves equality from
 argument to result). -/
-def functional (f : sigma β₁ → sigma β₂) : Prop :=
+def fst_functional (f : sigma β₁ → sigma β₂) : Prop :=
 ∀ ⦃s t : sigma β₁⦄, s.1 = t.1 → (f s).1 = (f t).1
 
 /-- A function on `sigma`s that is injective on `fst`s (preserves equality from
 result to argument). -/
-def injective (f : sigma β₁ → sigma β₂) : Prop :=
+def fst_injective (f : sigma β₁ → sigma β₂) : Prop :=
 ∀ ⦃s t : sigma β₁⦄, (f s).1 = (f t).1 → s.1 = t.1
 
 end
@@ -38,7 +38,7 @@ end
 /-- A function on `sigma`s bundled with its `fst`-injectivity property. -/
 structure embedding {α₁ α₂ : Type u} (β₁ : α₁ → Type v) (β₂ : α₂ → Type v) :=
 (to_fun : sigma β₁ → sigma β₂)
-(inj    : injective to_fun)
+(inj    : fst_injective to_fun)
 
 infixr ` s↪ `:25 := embedding
 
@@ -51,11 +51,11 @@ instance : has_coe_to_fun (β₁ s↪ β₂) :=
 @[simp] theorem to_fun_eq_coe (f : β₁ s↪ β₂) : f.to_fun = f :=
 rfl
 
-@[simp] theorem coe_fn_mk (f : sigma β₁ → sigma β₂) (i : injective f) :
+@[simp] theorem coe_fn_mk (f : sigma β₁ → sigma β₂) (i : fst_injective f) :
   (mk f i : sigma β₁ → sigma β₂) = f :=
 rfl
 
-theorem inj' : ∀ (f : β₁ s↪ β₂), injective f
+theorem inj' : ∀ (f : β₁ s↪ β₂), fst_injective f
 | ⟨_, h⟩ := h
 
 end embedding
@@ -67,19 +67,21 @@ variables {α : Type u} {β₁ β₂ : α → Type v}
 def map_snd (f : ∀ (a : α), β₁ a → β₂ a) : sigma β₁ → sigma β₂ :=
 have sigma β₁ → sigma (id β₂) := map id f, by exact this
 
-theorem map_snd_fst_iff {s₁ s₂ : sigma β₁} (f : ∀ (a : α), β₁ a → β₂ a) :
+theorem map_snd_eq_fst_iff {s₁ s₂ : sigma β₁} (f : ∀ (a : α), β₁ a → β₂ a) :
   (map_snd f s₁).1 = (map_snd f s₂).1 ↔ s₁.1 = s₂.1 :=
 by cases s₁; cases s₂; exact iff.rfl
 
-theorem map_snd_functional (f : ∀ (a : α), β₁ a → β₂ a) : functional (map_snd f) :=
-λ _ _, (map_snd_fst_iff f).mpr
+theorem map_snd_fst_functional (f : ∀ (a : α), β₁ a → β₂ a) :
+  fst_functional (map_snd f) :=
+λ _ _, (map_snd_eq_fst_iff f).mpr
 
-theorem map_snd_injective (f : ∀ (a : α), β₁ a → β₂ a) : injective (map_snd f) :=
-λ _ _, (map_snd_fst_iff f).mp
+theorem map_snd_fst_injective (f : ∀ (a : α), β₁ a → β₂ a) :
+  fst_injective (map_snd f) :=
+λ _ _, (map_snd_eq_fst_iff f).mp
 
 /-- Construct an `embedding` with `id` on `fst`. -/
 def embedding.mk₂ (f : ∀ (a : α), β₁ a → β₂ a) : embedding β₁ β₂ :=
-⟨_, map_snd_injective f⟩
+⟨_, map_snd_fst_injective f⟩
 
 end
 
@@ -111,14 +113,14 @@ end
 section
 variables {α : Type u} {β : α → Type v}
 
-theorem functional_id : functional (@id (sigma β)) :=
+theorem fst_functional_id : fst_functional (@id (sigma β)) :=
 λ s t h, h
 
-theorem injective_id : injective (@id (sigma β)) :=
+theorem fst_injective_id : fst_injective (@id (sigma β)) :=
 λ s t h, h
 
 @[refl] protected def embedding.refl (β : α → Type v) : β s↪ β :=
-⟨_, injective_id⟩
+⟨_, fst_injective_id⟩
 
 @[simp] theorem embedding.refl_apply (s : sigma β) : embedding.refl β s = s :=
 rfl
@@ -130,22 +132,36 @@ variables {α₁ α₂ α₃ : Type u}
 variables {β₁ : α₁ → Type v} {β₂ : α₂ → Type v} {β₃ : α₃ → Type v}
 variables {g : sigma β₂ → sigma β₃} {f : sigma β₁ → sigma β₂}
 
-theorem functional_comp (gf : functional g) (ff : functional f) : functional (g ∘ f) :=
+theorem fst_functional_comp (gf : fst_functional g) (ff : fst_functional f) :
+  fst_functional (g ∘ f) :=
 λ s t h, gf (ff h)
 
-theorem injective_comp (gi : injective g) (fi : injective f) : injective (g ∘ f) :=
+theorem fst_injective_comp (gi : fst_injective g) (fi : fst_injective f) :
+  fst_injective (g ∘ f) :=
 λ s t h, fi (gi h)
 
 @[trans] protected def embedding.trans (f : β₁ s↪ β₂) (g : β₂ s↪ β₃) : β₁ s↪ β₃ :=
-⟨_, injective_comp g.inj f.inj⟩
+⟨_, fst_injective_comp g.inj f.inj⟩
 
 @[simp] theorem embedding.trans_apply (f : β₁ s↪ β₂) (g : β₂ s↪ β₃) (s : sigma β₁) :
   (f.trans g) s = g (f s) :=
 rfl
 
-theorem fst_comp_injective (h₁ : sigma.injective f) (h₂ : functional₂ β₁) :
-  function.injective (sigma.fst ∘ f) :=
-λ s t p, @injective_fst _ _ h₂ _ _ (h₁ p)
+theorem injective_fst_comp (h : functional β₁) (fi : fst_injective f) :
+  function.injective (fst ∘ f) :=
+λ s t p, @injective_fst _ _ h _ _ (fi p)
+
+theorem injective_of_fst_injective (h : functional β₁) (fi : fst_injective f) :
+  function.injective f :=
+λ s t e, let p := fi (eq_fst e) in sigma.eq p $ h p
+
+theorem fst_injective_of_injective (h : functional β₂) (fi : function.injective f) :
+  fst_injective f :=
+λ s t p, eq_fst $ fi $ sigma.eq p $ h p
+
+theorem fst_injective_iff_injective (h₁ : functional β₁) (h₂ : functional β₂) :
+  fst_injective f ↔ function.injective f :=
+⟨injective_of_fst_injective h₁, fst_injective_of_injective h₂⟩
 
 end
 

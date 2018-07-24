@@ -87,23 +87,23 @@ section
 variables {α₁ : Type u} {α₂ : Type u} {β₁ : α₁ → Type v} {β₂ : α₂ → Type v}
 
 theorem nodup_keys_of_nodup_keys_map {l : list (sigma β₁)} {f : sigma β₁ → sigma β₂}
-  (ff : sigma.functional f) : nodup_keys (map f l) → nodup_keys l :=
+  (ff : sigma.fst_functional f) : nodup_keys (map f l) → nodup_keys l :=
 pairwise_of_pairwise_map f $ λ s t, mt (@ff s t)
 
 theorem nodup_keys_map {l : list (sigma β₁)} {f : sigma β₁ → sigma β₂}
-  (fi : sigma.injective f) : l.nodup_keys → (l.map f).nodup_keys :=
+  (fi : sigma.fst_injective f) : l.nodup_keys → (l.map f).nodup_keys :=
 pairwise_map_of_pairwise f (λ s t (h : s ∈ l ∧ t ∈ l ∧ s.1 ≠ t.1), mt (@fi s t) h.2.2) ∘
   pairwise.and_mem.mp
 
 theorem nodup_keys_map_iff {l : list (sigma β₁)} {f : sigma β₁ → sigma β₂}
-  (ff : sigma.functional f) (fi : sigma.injective f) : (l.map f).nodup_keys ↔ l.nodup_keys :=
+  (ff : sigma.fst_functional f) (fi : sigma.fst_injective f) : (l.map f).nodup_keys ↔ l.nodup_keys :=
 ⟨nodup_keys_of_nodup_keys_map ff, nodup_keys_map fi⟩
 
 end
 
 theorem nodup_keys_map_snd_iff {β₁ β₂ : α → Type v} {l : list (sigma β₁)}
   (f : ∀ (a : α), β₁ a → β₂ a) : (l.map (sigma.map_snd f)).nodup_keys ↔ l.nodup_keys :=
-nodup_keys_map_iff (sigma.map_snd_functional f) (sigma.map_snd_injective f)
+nodup_keys_map_iff (sigma.map_snd_fst_functional f) (sigma.map_snd_fst_injective f)
 
 theorem perm_nodup_keys (p : l₁ ~ l₂) : l₁.nodup_keys ↔ l₂.nodup_keys :=
 perm_pairwise (@sigma.rel.symm α β (≠) (@ne.symm α)) p
@@ -800,20 +800,20 @@ end
 section
 variables {α₁ α₂ : Type u} {β₁ : α₁ → Type v} {β₂ : α₂ → Type v}
 
-private lemma map_disjoint_keys₁ {l₁ l₂ : list (sigma β₁)} (β₁f : sigma.functional₂ β₁)
-  {f : sigma β₁ → sigma β₂} (fi : sigma.injective f) (dk : disjoint l₁.keys l₂.keys) :
+private lemma map_disjoint_keys₁ {l₁ l₂ : list (sigma β₁)} (β₁f : sigma.functional β₁)
+  {f : sigma β₁ → sigma β₂} (fi : sigma.fst_injective f) (dk : disjoint l₁.keys l₂.keys) :
   disjoint (l₁.map f).keys (l₂.map f).keys :=
 begin
   simp only [keys, map_map sigma.fst f],
   intros a ml₁ ml₂,
   rcases mem_map.mp ml₁ with ⟨s, hs, e⟩,
   induction e,
-  exact dk (mem_keys_of_mem hs)
-    (mem_keys_of_mem ((mem_map_of_inj (sigma.fst_comp_injective fi β₁f)).mp ml₂))
+  let F := (mem_map_of_inj (sigma.injective_fst_comp β₁f fi)).mp,
+  exact dk (mem_keys_of_mem hs) (mem_keys_of_mem (F ml₂))
 end
 
-private lemma map_disjoint_keys₂ {l₁ l₂ : list (sigma β₁)} (β₁f : sigma.functional₂ β₁)
-  {f : sigma β₁ → sigma β₂} (fi : sigma.injective f)
+private lemma map_disjoint_keys₂ {l₁ l₂ : list (sigma β₁)} (β₁f : sigma.functional β₁)
+  {f : sigma β₁ → sigma β₂} (fi : sigma.fst_injective f)
   (dk : disjoint (l₁.map f).keys (l₂.map f).keys) : disjoint l₁.keys l₂.keys :=
 begin
   simp only [disjoint, keys, map_map sigma.fst f] at dk,
@@ -822,12 +822,13 @@ begin
   cases exists_mem_of_mem_keys ml₂ with b₂ ml₂,
   have e : b₁ = b₂ := @β₁f ⟨a, b₁⟩ ⟨a, b₂⟩ rfl,
   induction e,
-  exact dk ((mem_map_of_inj (sigma.fst_comp_injective fi β₁f)).mpr ml₁)
-    ((mem_map_of_inj (sigma.fst_comp_injective fi β₁f)).mpr ml₂)
+  have F : ∀ {l}, _ ∈ l → (sigma.fst ∘ f) _ ∈ map (sigma.fst ∘ f) l :=
+    λ l, (@mem_map_of_inj _ _ _ (sigma.injective_fst_comp β₁f fi) ⟨a, b₁⟩ l).mpr,
+  exact dk (F ml₁) (F ml₂)
 end
 
-@[simp] theorem map_disjoint_keys {l₁ l₂ : list (sigma β₁)} (β₁f : sigma.functional₂ β₁)
-  {f : sigma β₁ → sigma β₂} (fi : sigma.injective f) :
+@[simp] theorem map_disjoint_keys {l₁ l₂ : list (sigma β₁)} (β₁f : sigma.functional β₁)
+  {f : sigma β₁ → sigma β₂} (fi : sigma.fst_injective f) :
   disjoint (l₁.map f).keys (l₂.map f).keys ↔ disjoint l₁.keys l₂.keys :=
 ⟨map_disjoint_keys₂ β₁f fi, map_disjoint_keys₁ β₁f fi⟩
 
