@@ -54,6 +54,9 @@ theorem exists_mem_of_mem_keys (h : a ∈ l.keys) : ∃ (b : β a), sigma.mk a b
 let ⟨⟨a', b'⟩, m, e⟩ := exists_of_mem_map h in
 eq.rec_on e (exists.intro b' m)
 
+theorem mem_keys : a ∈ l.keys ↔ ∃ (b : β a), sigma.mk a b ∈ l :=
+⟨exists_mem_of_mem_keys, λ ⟨b, h⟩, mem_keys_of_mem h⟩
+
 /-- No duplicate keys in a list of dependent key-value pairs. -/
 def nodup_keys : list (sigma β) → Prop :=
 pairwise (sigma.rel (≠))
@@ -780,15 +783,55 @@ end
 end kreplace
 
 section disjoint
+
+section
 variables [decidable_eq α]
 
 @[simp] theorem map_kappend {γ : Type*} (f : sigma β → γ)
-  (dj : disjoint l₁.keys l₂.keys) : (l₁ k++ l₂).map f = l₁.map f ++ l₂.map f :=
-by induction l₁ with _ _ ih; [refl, {simp at dj, simp [dj.1, ih dj.2.symm]}]
+  (dk : disjoint l₁.keys l₂.keys) : (l₁ k++ l₂).map f = l₁.map f ++ l₂.map f :=
+by induction l₁ with _ _ ih; [refl, {simp at dk, simp [dk.1, ih dk.2.symm]}]
 
-theorem keys_kappend (dj : disjoint l₁.keys l₂.keys) :
+theorem keys_kappend (dk : disjoint l₁.keys l₂.keys) :
   (l₁ k++ l₂).keys = l₁.keys ++ l₂.keys :=
-by simp [keys, dj]
+by simp [keys, dk]
+
+end
+
+section
+variables {α₁ α₂ : Type u} {β₁ : α₁ → Type v} {β₂ : α₂ → Type v}
+
+private lemma map_disjoint_keys₁ {l₁ l₂ : list (sigma β₁)} (β₁f : sigma.functional₂ β₁)
+  {f : sigma β₁ → sigma β₂} (fi : sigma.injective f) (dk : disjoint l₁.keys l₂.keys) :
+  disjoint (l₁.map f).keys (l₂.map f).keys :=
+begin
+  simp only [keys, map_map sigma.fst f],
+  intros a ml₁ ml₂,
+  rcases mem_map.mp ml₁ with ⟨s, hs, e⟩,
+  induction e,
+  exact dk (mem_keys_of_mem hs)
+    (mem_keys_of_mem ((mem_map_of_inj (sigma.fst_comp_injective fi β₁f)).mp ml₂))
+end
+
+private lemma map_disjoint_keys₂ {l₁ l₂ : list (sigma β₁)} (β₁f : sigma.functional₂ β₁)
+  {f : sigma β₁ → sigma β₂} (fi : sigma.injective f)
+  (dk : disjoint (l₁.map f).keys (l₂.map f).keys) : disjoint l₁.keys l₂.keys :=
+begin
+  simp only [disjoint, keys, map_map sigma.fst f] at dk,
+  intros a ml₁ ml₂,
+  cases exists_mem_of_mem_keys ml₁ with b₁ ml₁,
+  cases exists_mem_of_mem_keys ml₂ with b₂ ml₂,
+  have e : b₁ = b₂ := @β₁f ⟨a, b₁⟩ ⟨a, b₂⟩ rfl,
+  induction e,
+  exact dk ((mem_map_of_inj (sigma.fst_comp_injective fi β₁f)).mpr ml₁)
+    ((mem_map_of_inj (sigma.fst_comp_injective fi β₁f)).mpr ml₂)
+end
+
+@[simp] theorem map_disjoint_keys {l₁ l₂ : list (sigma β₁)} (β₁f : sigma.functional₂ β₁)
+  {f : sigma β₁ → sigma β₂} (fi : sigma.injective f) :
+  disjoint (l₁.map f).keys (l₂.map f).keys ↔ disjoint l₁.keys l₂.keys :=
+⟨map_disjoint_keys₂ β₁f fi, map_disjoint_keys₁ β₁f fi⟩
+
+end
 
 end disjoint
 

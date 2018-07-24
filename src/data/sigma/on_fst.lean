@@ -12,6 +12,12 @@ by cases s₁; cases s₂; cc
 theorem eq_snd {s₁ s₂ : sigma β} : s₁ = s₂ → s₁.2 == s₂.2 :=
 by cases s₁; cases s₂; cc
 
+def functional₂ (β : α → Type v) : Prop :=
+∀ ⦃s t : sigma β⦄ (h : s.1 = t.1), (eq.rec_on h s.2 : β t.1) = t.2
+
+theorem injective_fst (h : functional₂ β) : function.injective (@fst _ β) :=
+λ s₁ s₂ p, sigma.eq p (h p)
+
 end
 
 section
@@ -136,6 +142,10 @@ theorem injective_comp (gi : injective g) (fi : injective f) : injective (g ∘ 
 @[simp] theorem embedding.trans_apply (f : β₁ s↪ β₂) (g : β₂ s↪ β₃) (s : sigma β₁) :
   (f.trans g) s = g (f s) :=
 rfl
+
+theorem fst_comp_injective (h₁ : sigma.injective f) (h₂ : functional₂ β₁) :
+  function.injective (sigma.fst ∘ f) :=
+λ s t p, @injective_fst _ _ h₂ _ _ (h₁ p)
 
 end
 

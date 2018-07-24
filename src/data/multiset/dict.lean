@@ -161,10 +161,14 @@ end kunion
 
 section map
 variables {α₁ : Type u} {β₁ : α₁ → Type v} {α₂ : Type u} {β₂ : α₂ → Type v} {f : sigma β₁ → sigma β₂}
-variables {m : multiset (sigma β₁)}
+variables {m m₁ m₂ : multiset (sigma β₁)}
 
 theorem nodup_keys_map (fi : sigma.injective f) : m.nodup_keys → (m.map f).nodup_keys :=
 quotient.induction_on m $ λ _, nodup_keys_map fi
+
+theorem map_disjoint_keys (β₁f : sigma.functional₂ β₁) (fi : sigma.injective f) :
+  disjoint (m₁.map f).keys (m₂.map f).keys ↔ disjoint m₁.keys m₂.keys :=
+quotient.induction_on₂ m₁ m₂ $ λ _ _, map_disjoint_keys β₁f fi
 
 end map
 
