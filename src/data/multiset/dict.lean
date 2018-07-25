@@ -102,8 +102,8 @@ quotient.induction_on m $ λ _ _, mem_kinsert
 
 @[simp] theorem mem_keys_kinsert {a : α} (h : sigma.functional β) {s : sigma β}
   {m : multiset (sigma β)} (d : m.nodup_keys) :
-  a ∈ (kinsert s d).keys ↔ a = s.1 ∨ a ≠ s.1 ∧ a ∈ m.keys :=
-by simp [keys, exists_or_distrib, h]
+  a ∈ (kinsert s d).keys ↔ a = s.1 ∨ a ∈ m.keys :=
+by by_cases h' : a = s.1; simp [keys, exists_or_distrib, h, h']
 
 end kinsert
 
