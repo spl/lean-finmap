@@ -47,9 +47,13 @@ theorem kerase_eq_filter {m : multiset (sigma β)} (a : α) :
   ∀ (nd : m.nodup_keys), kerase a nd = filter (λ x, x.1 ≠ a) m :=
 quotient.induction_on m $ λ _, congr_arg coe ∘ nodup_keys_kerase_eq_filter a
 
-theorem mem_kerase {m : multiset (sigma β)} {s : sigma β} {a : α}
+@[simp] theorem mem_kerase {m : multiset (sigma β)} {s : sigma β} {a : α}
   (nd : m.nodup_keys) : s ∈ kerase a nd ↔ s.1 ≠ a ∧ s ∈ m :=
 by rw kerase_eq_filter a nd; simp [and_comm]
+
+@[simp] theorem mem_keys_kerase {a₁ a₂ : α} {m : multiset (sigma β)} (d : m.nodup_keys) :
+  a₁ ∈ (kerase a₂ d).keys ↔ a₁ ≠ a₂ ∧ a₁ ∈ m.keys :=
+by simp [keys]
 
 theorem kerase_subset (a : α) {m : multiset (sigma β)} (nd : m.nodup_keys) :
   kerase a nd ⊆ m :=
@@ -95,6 +99,11 @@ quotient.induction_on m $ λ _, nodup_keys_kinsert s
 @[simp] theorem mem_kinsert {m : multiset (sigma β)} {s₁ s₂ : sigma β} :
   ∀ (d : m.nodup_keys), s₁ ∈ kinsert s₂ d ↔ s₁ = s₂ ∨ s₁ ∈ kerase s₂.1 d :=
 quotient.induction_on m $ λ _ _, mem_kinsert
+
+@[simp] theorem mem_keys_kinsert {a : α} (h : sigma.functional β) {s : sigma β}
+  {m : multiset (sigma β)} (d : m.nodup_keys) :
+  a ∈ (kinsert s d).keys ↔ a = s.1 ∨ a ≠ s.1 ∧ a ∈ m.keys :=
+by simp [keys, exists_or_distrib, h]
 
 end kinsert
 

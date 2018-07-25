@@ -211,6 +211,10 @@ rfl
 @[simp] theorem keys_empty : keys (∅ : finmap α β) = ∅ :=
 rfl
 
+@[simp] theorem mem_insert_keys [decidable_eq α] {a₁ a₂ : α} {f : finmap α β} :
+  a₁ ∈ insert a₂ (keys f) ↔ a₁ = a₂ ∨ a₁ ∈ keys f :=
+by simp
+
 end keys
 
 /- erase -/
@@ -231,6 +235,10 @@ mem_kerase f.nodup_keys
 theorem not_mem_erase (a : α) (b : β a) (f : finmap α β) : sigma.mk a b ∉ f.erase a :=
 by simp
 
+@[simp] theorem mem_keys_erase {a₁ a₂ : α} {f : finmap α β} :
+  a₁ ∈ keys (f.erase a₂) ↔ a₁ ≠ a₂ ∧ a₁ ∈ keys f :=
+by simp [keys]
+
 @[simp] theorem erase_empty (a : α) : erase ∅ a = (∅ : finmap α β) :=
 rfl
 
@@ -250,22 +258,29 @@ end erase
 section insert
 variables [decidable_eq α]
 
-protected def insert (s : sigma β) (f : finmap α β) : finmap α β :=
-⟨kinsert s f.nodup_keys, nodup_keys_kinsert s f.nodup_keys⟩
-
 instance : has_insert (sigma β) (finmap α β) :=
-⟨finmap.insert⟩
+⟨λ s f, ⟨kinsert s f.nodup_keys, nodup_keys_kinsert s f.nodup_keys⟩⟩
 
 @[simp] theorem insert_val (s : sigma β) (f : finmap α β) :
-  (f.insert s).val = kinsert s f.nodup_keys :=
+  (insert s f).val = kinsert s f.nodup_keys :=
 rfl
 
 @[simp] theorem insert_empty (s : sigma β) : insert s (∅ : finmap α β) = {s} :=
 rfl
 
 @[simp] theorem mem_insert (s₁ s₂ : sigma β) (f : finmap α β) :
-  s₁ ∈ f.insert s₂ ↔ s₁ = s₂ ∨ s₁ ∈ f.erase s₂.1 :=
+  s₁ ∈ insert s₂ f ↔ s₁ = s₂ ∨ s₁ ∈ f.erase s₂.1 :=
 mem_kinsert f.nodup_keys
+
+variables {a : α} {s : sigma β} {f : finmap α β}
+
+@[simp] theorem mem_keys_insert (h : sigma.functional β) :
+  a ∈ keys (insert s f) ↔ a = s.1 ∨ a ≠ s.1 ∧ a ∈ keys f :=
+by simp [keys, h]
+
+@[simp] theorem insert_keys (h : sigma.functional β) :
+  keys (insert s f) = insert s.1 (keys f) :=
+finset.ext.mpr $ λ a, by by_cases h' : a = s.1; simp [h, h']
 
 end insert
 
