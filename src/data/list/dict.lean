@@ -59,7 +59,7 @@ theorem mem_keys : a ∈ l.keys ↔ ∃ (b : β a), sigma.mk a b ∈ l :=
 
 /-- No duplicate keys in a list of dependent key-value pairs. -/
 def nodup_keys : list (sigma β) → Prop :=
-pairwise (sigma.rel (≠))
+pairwise (sigma.fst_rel (≠))
 
 section nodup_keys
 
@@ -68,7 +68,7 @@ pairwise.nil _
 
 @[simp] theorem nodup_keys_cons :
   (hd :: tl).nodup_keys ↔ hd.1 ∉ tl.keys ∧ tl.nodup_keys :=
-by simp [nodup_keys, sigma.rel]
+by simp [nodup_keys, sigma.fst_rel]
 
 theorem nodup_keys_cons_of_nodup_keys (h : hd.1 ∉ tl.keys)
   (t : nodup_keys tl) : nodup_keys (hd :: tl) :=
@@ -106,7 +106,7 @@ theorem nodup_keys_map_snd_iff {β₁ β₂ : α → Type v} {l : list (sigma β
 nodup_keys_map_iff (sigma.map_snd_fst_functional f) (sigma.map_snd_fst_injective f)
 
 theorem perm_nodup_keys (p : l₁ ~ l₂) : l₁.nodup_keys ↔ l₂.nodup_keys :=
-perm_pairwise (@sigma.rel.symm α β (≠) (@ne.symm α)) p
+perm_pairwise (@sigma.fst_rel.symm α β (≠) (@ne.symm α)) p
 
 @[simp] theorem nodup_keys_cons_of_not_mem_keys (hd : sigma β)
   (h : hd.1 ∉ tl.keys) : (hd :: tl).nodup_keys ↔ tl.nodup_keys :=

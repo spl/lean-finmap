@@ -99,22 +99,22 @@ variables {α : Type u} {β : α → Type v} {R : α → α → Prop}
 
 /-- A relation `R` on `fst` values lifted to the `sigma`. This is useful where
 you might otherwise use the term `λ s₁ s₂, R s₁.1 s₂.1`. -/
-def rel (R : α → α → Prop) (s₁ s₂ : sigma β) : Prop :=
+def fst_rel (R : α → α → Prop) (s₁ s₂ : sigma β) : Prop :=
 R s₁.1 s₂.1
 
-@[simp] theorem rel_eq {s₁ s₂ : sigma β} : rel R s₁ s₂ = R s₁.1 s₂.1 :=
+@[simp] theorem fst_rel_def {s₁ s₂ : sigma β} : fst_rel R s₁ s₂ = R s₁.1 s₂.1 :=
 rfl
 
-instance [d : decidable_rel R] : decidable_rel (@rel _ β R)
+instance fst_rel_decidable [d : decidable_rel R] : decidable_rel (@fst_rel _ β R)
 | s₁ s₂ := @d s₁.1 s₂.1
 
-theorem rel.refl (h : reflexive R) : reflexive (@rel _ β R) :=
+theorem fst_rel.refl (h : reflexive R) : reflexive (@fst_rel _ β R) :=
 λ s, h s.1
 
-theorem rel.symm (h : symmetric R) : symmetric (@rel _ β R) :=
+theorem fst_rel.symm (h : symmetric R) : symmetric (@fst_rel _ β R) :=
 λ s₁ s₂ (p : R s₁.1 s₂.1), h p
 
-theorem rel.trans (h : transitive R) : transitive (@rel _ β R) :=
+theorem fst_rel.trans (h : transitive R) : transitive (@fst_rel _ β R) :=
 λ s₁ s₂ s₃ (p : R s₁.1 s₂.1) (q : R s₂.1 s₃.1), h p q
 
 end
