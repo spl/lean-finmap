@@ -83,8 +83,34 @@ pairwise.imp $ λ ⟨a₁, b₁⟩ ⟨a₂, b₂⟩ (h : a₁ ≠ a₂), by simp
 @[simp] theorem nodup_keys_iff : l.keys.nodup ↔ l.nodup_keys :=
 pairwise_map sigma.fst
 
+-- Is this useful?
+theorem nodup_keys_functional {s t : sigma β} (d : l.nodup_keys)
+  (ms : s ∈ l) (mt : t ∈ l) (h : s.1 = t.1) : (eq.rec_on h s.2 : β t.1) = t.2 :=
+begin
+  induction d,
+  case pairwise.nil { cases ms },
+  case pairwise.cons : _ _ r _ ih {
+    simp at ms mt,
+    cases ms; cases mt,
+    { subst ms, subst mt },
+    { induction ms, exact absurd h (r _ mt) },
+    { induction mt, exact absurd h (ne.symm (r _ ms)) },
+    { exact ih ms mt } },
+end
+
+-- Is this useful?
+theorem eq_of_nodup_keys_of_eq_fst {s t : sigma β} (d : l.nodup_keys)
+  (ms : s ∈ l) (mt : t ∈ l) (h : s.1 = t.1) : s = t :=
+sigma.eq h $ nodup_keys_functional d ms mt h
+
 section
 variables {α₁ : Type u} {α₂ : Type u} {β₁ : α₁ → Type v} {β₂ : α₂ → Type v}
+
+-- Is this useful?
+theorem nodup_keys_injective {s t : sigma β₁} {l : list (sigma β₁)} {f : sigma β₁ → sigma β₂}
+  (fi : sigma.fst_injective f) (d : l.nodup_keys) (ms : s ∈ l) (mt : t ∈ l) (h : f s = f t) :
+  s = t :=
+eq_of_nodup_keys_of_eq_fst d ms mt $ fi $ sigma.eq_fst h
 
 theorem nodup_keys_of_nodup_keys_map {l : list (sigma β₁)} {f : sigma β₁ → sigma β₂}
   (ff : sigma.fst_functional f) : nodup_keys (map f l) → nodup_keys l :=
@@ -104,6 +130,27 @@ theorem mem_keys_of_mem_keys_map {s : sigma β₁} {l : list (sigma β₁)} {f :
 have h : (sigma.fst ∘ f) s ∈ map (sigma.fst ∘ f) l, by simpa [keys] using h,
 let ⟨_, m, e⟩ := exists_of_mem_map h in
 fi e ▸ mem_keys_of_mem m
+
+-- Is this useful?
+theorem mem_map_of_mem_of_mem_keys_map {s : sigma β₁} {l : list (sigma β₁)} {f : sigma β₁ → sigma β₂}
+  (fi : sigma.fst_injective f) (d : l.nodup_keys) (ms : s ∈ l) (mfs : (f s).1 ∈ (l.map f).keys) :
+  f s ∈ l.map f :=
+begin
+  simp [keys] at mfs,
+  rcases mfs with ⟨a, b, mab, ef⟩,
+  cases s with sa sb,
+  have ea : a = sa := fi ef,
+  subst ea,
+  have eb : b = sb := nodup_keys_functional d mab ms rfl,
+  subst eb,
+  exact mem_map_of_mem f mab,
+end
+
+-- Is this useful?
+theorem mem_keys_of_mem_map {s : sigma β₁} {l : list (sigma β₁)} {f : sigma β₁ → sigma β₂}
+  (fi : sigma.fst_injective f) (h : f s ∈ l.map f) : s.1 ∈ l.keys :=
+let ⟨_, m, e⟩ := exists_of_mem_map h in
+fi (sigma.eq_fst e) ▸ mem_keys_of_mem m
 
 theorem mem_keys_map_of_mem {s : sigma β₁} {l : list (sigma β₁)} (f : sigma β₁ → sigma β₂)
   (ms : s ∈ l) : (f s).1 ∈ (l.map f).keys :=
