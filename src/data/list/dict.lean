@@ -628,40 +628,40 @@ end
 
 end kerase_all
 
-/-- Left-biased key-based append for a list of dependent key-value pairs.
-The result of `l₁.kappend l₂` is constructed from `l₁` with `l₂` appended such
+/-- Left-biased key-based union for a list of dependent key-value pairs.
+The result of `l₁.kunion l₂` is constructed from `l₁` with `l₂` appended such
 that the first pair matching each key in `l₁` is erased from `l₂`. Note that
 the result can still have duplicates if duplicates exist in either argument. -/
-def kappend [decidable_eq α] : list (sigma β) → list (sigma β) → list (sigma β)
+def kunion [decidable_eq α] : list (sigma β) → list (sigma β) → list (sigma β)
 | []         l := l
-| (hd :: tl) l := hd :: kappend tl (kerase hd.1 l)
+| (hd :: tl) l := hd :: kunion tl (kerase hd.1 l)
 
-local infixr ` k++ `:67 := kappend
+local infixr ` k∪ `:67 := kunion
 
-section kappend
+section kunion
 variables [decidable_eq α]
 
-@[simp] theorem nil_kappend (l : list (sigma β)) : [] k++ l = l :=
+@[simp] theorem nil_kunion (l : list (sigma β)) : [] k∪ l = l :=
 rfl
 
-@[simp] theorem kappend_nil : ∀ (l : list (sigma β)), l k++ [] = l
+@[simp] theorem kunion_nil : ∀ (l : list (sigma β)), l k∪ [] = l
 | []        := rfl
-| (_ :: tl) := by rw [kappend, kerase_nil, kappend_nil tl]
+| (_ :: tl) := by rw [kunion, kerase_nil, kunion_nil tl]
 
-@[simp] theorem kappend_cons : (hd :: tl) k++ l = hd :: tl k++ kerase hd.1 l :=
+@[simp] theorem kunion_cons : (hd :: tl) k∪ l = hd :: tl k∪ kerase hd.1 l :=
 rfl
 
-@[simp] theorem kerase_kappend : ∀ {l₁ : list (sigma β)} (l₂ : list (sigma β)),
-  l₁.kerase a k++ l₂.kerase a = (l₁ k++ l₂).kerase a
+@[simp] theorem kerase_kunion : ∀ {l₁ : list (sigma β)} (l₂ : list (sigma β)),
+  l₁.kerase a k∪ l₂.kerase a = (l₁ k∪ l₂).kerase a
 | []        _ := rfl
 | (hd :: _) l := by by_cases h : hd.1 = a;
-                    simp [h, kerase_comm a hd.1 l, kerase_kappend]
+                    simp [h, kerase_comm a hd.1 l, kerase_kunion]
 
-@[simp] theorem kappend_assoc (l₁ l₂ l₃ : list (sigma β)) :
-  (l₁ k++ l₂) k++ l₃ = l₁ k++ (l₂ k++ l₃) :=
+@[simp] theorem kunion_assoc (l₁ l₂ l₃ : list (sigma β)) :
+  (l₁ k∪ l₂) k∪ l₃ = l₁ k∪ (l₂ k∪ l₃) :=
 by induction l₁ generalizing l₂ l₃; simp *
 
-theorem mem_of_mem_kappend : s ∈ l₁ k++ l₂ → s ∈ l₁ ∨ s ∈ l₂ :=
+theorem mem_of_mem_kunion : s ∈ l₁ k∪ l₂ → s ∈ l₁ ∨ s ∈ l₂ :=
 begin
   induction l₁ generalizing l₂,
   case list.nil { simp },
@@ -678,34 +678,34 @@ begin
   }
 end
 
-theorem mem_kappend_left (l₂ : list (sigma β)) (h : s ∈ l₁) : s ∈ l₁ k++ l₂ :=
+theorem mem_kunion_left (l₂ : list (sigma β)) (h : s ∈ l₁) : s ∈ l₁ k∪ l₂ :=
 by induction l₁ generalizing l₂; simp at h; cases h; simp *
 
-theorem mem_kappend_right (h₁ : s.1 ∉ l₁.keys) (h₂ : s ∈ l₂) : s ∈ l₁ k++ l₂ :=
+theorem mem_kunion_right (h₁ : s.1 ∉ l₁.keys) (h₂ : s ∈ l₂) : s ∈ l₁ k∪ l₂ :=
 by induction l₁ generalizing l₂; simp at h₁; cases h₁; simp *
 
-theorem mem_kappend_of_disjoint_keys (dj : disjoint l₁.keys l₂.keys) (h : s ∈ l₁ ∨ s ∈ l₂) :
-  s ∈ l₁ k++ l₂ :=
+theorem mem_kunion_of_disjoint_keys (dj : disjoint l₁.keys l₂.keys) (h : s ∈ l₁ ∨ s ∈ l₂) :
+  s ∈ l₁ k∪ l₂ :=
 begin
   cases h with h h,
-  { exact mem_kappend_left _ h },
+  { exact mem_kunion_left _ h },
   { by_cases p : s.1 ∈ l₁.keys,
     { exact absurd h (mt mem_keys_of_mem (dj p)) },
-    { exact mem_kappend_right p h } }
+    { exact mem_kunion_right p h } }
 end
 
-@[simp] theorem mem_kappend_iff (dj : disjoint l₁.keys l₂.keys) : s ∈ l₁ k++ l₂ ↔ s ∈ l₁ ∨ s ∈ l₂ :=
-⟨mem_of_mem_kappend, mem_kappend_of_disjoint_keys dj⟩
+@[simp] theorem mem_kunion_iff (dj : disjoint l₁.keys l₂.keys) : s ∈ l₁ k∪ l₂ ↔ s ∈ l₁ ∨ s ∈ l₂ :=
+⟨mem_of_mem_kunion, mem_kunion_of_disjoint_keys dj⟩
 
-@[simp] theorem mem_keys_kappend : a ∈ (l₁ k++ l₂).keys ↔ a ∈ l₁.keys ∨ a ∈ l₂.keys :=
+@[simp] theorem mem_keys_kunion : a ∈ (l₁ k∪ l₂).keys ↔ a ∈ l₁.keys ∨ a ∈ l₂.keys :=
 by induction l₁ with hd _ ih generalizing l₂;
    [simp, {by_cases h : hd.1 = a; [simp [h], simp [h, ne.symm h, ih]]}]
 
-theorem nodup_keys_kappend (nd₁ : l₁.nodup_keys) (nd₂ : l₂.nodup_keys) :
-  (l₁ k++ l₂).nodup_keys :=
+theorem nodup_keys_kunion (nd₁ : l₁.nodup_keys) (nd₂ : l₂.nodup_keys) :
+  (l₁ k∪ l₂).nodup_keys :=
 by induction l₁ generalizing l₂; simp at nd₁; simp *
 
-theorem perm_kappend_left (l : list (sigma β)) (p : l₁ ~ l₂) : l₁ k++ l ~ l₂ k++ l :=
+theorem perm_kunion_left (l : list (sigma β)) (p : l₁ ~ l₂) : l₁ k∪ l ~ l₂ k∪ l :=
 begin
   induction p generalizing l,
   case list.perm.nil { refl },
@@ -720,20 +720,20 @@ begin
   }
 end
 
-theorem perm_kappend_right : ∀ (l : list (sigma β)) {l₁ l₂ : list (sigma β)},
-  l₁.nodup_keys → l₂.nodup_keys → l₁ ~ l₂ → l k++ l₁ ~ l k++ l₂
+theorem perm_kunion_right : ∀ (l : list (sigma β)) {l₁ l₂ : list (sigma β)},
+  l₁.nodup_keys → l₂.nodup_keys → l₁ ~ l₂ → l k∪ l₁ ~ l k∪ l₂
 | []         _  _  _   _   p := p
 | (hd :: tl) l₁ l₂ nd₁ nd₂ p :=
   by simp [perm.skip hd
-    (perm_kappend_right tl (nodup_keys_kerase hd.1 nd₁)
+    (perm_kunion_right tl (nodup_keys_kerase hd.1 nd₁)
                            (nodup_keys_kerase hd.1 nd₂)
                            (perm_kerase hd.1 nd₁ nd₂ p))]
 
-theorem perm_kappend (nd₂ : l₂.nodup_keys) (nd₄ : l₄.nodup_keys)
-  (p₁₃ : l₁ ~ l₃) (p₂₄ : l₂ ~ l₄) : l₁ k++ l₂ ~ l₃ k++ l₄ :=
-perm.trans (perm_kappend_left l₂ p₁₃) (perm_kappend_right l₃ nd₂ nd₄ p₂₄)
+theorem perm_kunion (nd₂ : l₂.nodup_keys) (nd₄ : l₄.nodup_keys)
+  (p₁₃ : l₁ ~ l₃) (p₂₄ : l₂ ~ l₄) : l₁ k∪ l₂ ~ l₃ k∪ l₄ :=
+perm.trans (perm_kunion_left l₂ p₁₃) (perm_kunion_right l₃ nd₂ nd₄ p₂₄)
 
-end kappend
+end kunion
 
 /-- `cons` with `kerase` of the first `s`-key-matching pair -/
 def kinsert [decidable_eq α] (s : sigma β) (l : list (sigma β)) : list (sigma β) :=
@@ -745,7 +745,7 @@ variables [decidable_eq α]
 @[simp] theorem kinsert_eq_cons_kerase : l.kinsert s = s :: l.kerase s.1 :=
 rfl
 
-@[simp] theorem kinsert_kappend : l₁.kinsert s k++ l₂ = (l₁ k++ l₂).kinsert s :=
+@[simp] theorem kinsert_kunion : l₁.kinsert s k∪ l₂ = (l₁ k∪ l₂).kinsert s :=
 by simp
 
 @[simp] theorem mem_kinsert :
@@ -854,12 +854,12 @@ section disjoint
 section
 variables [decidable_eq α]
 
-@[simp] theorem map_kappend {γ : Type*} (f : sigma β → γ)
-  (dk : disjoint l₁.keys l₂.keys) : (l₁ k++ l₂).map f = l₁.map f ++ l₂.map f :=
+@[simp] theorem map_kunion {γ : Type*} (f : sigma β → γ)
+  (dk : disjoint l₁.keys l₂.keys) : (l₁ k∪ l₂).map f = l₁.map f ++ l₂.map f :=
 by induction l₁ with _ _ ih; [refl, {simp at dk, simp [dk.1, ih dk.2.symm]}]
 
-theorem keys_kappend (dk : disjoint l₁.keys l₂.keys) :
-  (l₁ k++ l₂).keys = l₁.keys ++ l₂.keys :=
+theorem keys_kunion (dk : disjoint l₁.keys l₂.keys) :
+  (l₁ k∪ l₂).keys = l₁.keys ++ l₂.keys :=
 by simp [keys, dk]
 
 end

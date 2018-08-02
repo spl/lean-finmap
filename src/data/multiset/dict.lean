@@ -150,21 +150,21 @@ def kunion : m₁.nodup_keys → m₂.nodup_keys → multiset (sigma β) :=
 @quotient.hrec_on₂ _ _ _ _
   (λ (m₁ m₂ : multiset (sigma β)), m₁.nodup_keys → m₂.nodup_keys → multiset (sigma β))
   m₁ m₂
-  (λ l₁ l₂ (d₁ : l₁.nodup_keys) (d₂ : l₂.nodup_keys), l₁.kappend l₂) $
+  (λ l₁ l₂ (d₁ : l₁.nodup_keys) (d₂ : l₂.nodup_keys), l₁.kunion l₂) $
     λ l₁ l₂ l₃ l₄ p₁₃ p₂₄,
     hfunext (by rw perm_nodup_keys p₁₃) $
       λ (d₁ : l₁.nodup_keys) (d₃ : l₃.nodup_keys) _,
       hfunext (by rw perm_nodup_keys p₂₄) $
         λ (d₂ : l₂.nodup_keys) (d₄ : l₄.nodup_keys) _,
-        heq_of_eq $ quotient.sound $ perm_kappend d₂ d₄ p₁₃ p₂₄
+        heq_of_eq $ quotient.sound $ perm_kunion d₂ d₄ p₁₃ p₂₄
 
 @[simp] theorem mem_kunion {s : sigma β} : ∀ (d₁ : m₁.nodup_keys) (d₂ : m₂.nodup_keys),
   disjoint m₁.keys m₂.keys → (s ∈ kunion d₁ d₂ ↔ s ∈ m₁ ∨ s ∈ m₂) :=
-quotient.induction_on₂ m₁ m₂ $ λ _ _ _ _, mem_kappend_iff
+quotient.induction_on₂ m₁ m₂ $ λ _ _ _ _, mem_kunion_iff
 
 @[simp] theorem nodup_keys_kunion :
   ∀ (d₁ : m₁.nodup_keys) (d₂ : m₂.nodup_keys), (kunion d₁ d₂).nodup_keys :=
-quotient.induction_on₂ m₁ m₂ $ λ _ _, nodup_keys_kappend
+quotient.induction_on₂ m₁ m₂ $ λ _ _, nodup_keys_kunion
 
 end kunion
 
