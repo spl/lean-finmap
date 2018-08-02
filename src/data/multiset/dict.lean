@@ -175,9 +175,9 @@ variables {m m₁ m₂ : multiset (sigma β₁)}
 theorem nodup_keys_map (fi : sigma.fst_injective f) : m.nodup_keys → (m.map f).nodup_keys :=
 quotient.induction_on m $ λ _, nodup_keys_map fi
 
-theorem map_disjoint_keys (β₁f : sigma.functional β₁) (fi : sigma.fst_injective f) :
+theorem disjoint_keys_map (ff : sigma.fst_functional f) (fi : sigma.fst_injective f) :
   disjoint (m₁.map f).keys (m₂.map f).keys ↔ disjoint m₁.keys m₂.keys :=
-quotient.induction_on₂ m₁ m₂ $ λ _ _, map_disjoint_keys β₁f fi
+quotient.induction_on₂ m₁ m₂ $ λ _ _, disjoint_keys_map ff fi
 
 end map
 

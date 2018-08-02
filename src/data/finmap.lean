@@ -358,13 +358,13 @@ eq_of_veq $ by simp [erase_dup_map_erase_dup_eq]
 theorem map_subset_map (h : f ⊆ g) : f.map p ⊆ g.map p :=
 by simp [subset_def, map_subset_map h]
 
-theorem map_disjoint_keys [decidable_eq α₁] [decidable_eq α₂] (β₁f : sigma.functional β₁) :
+theorem disjoint_keys_map [decidable_eq α₁] [decidable_eq α₂] (pf : sigma.fst_functional p) :
   disjoint (f.map p).keys (g.map p).keys ↔ disjoint f.keys g.keys :=
-by simp only [finset.disjoint_val]; exact multiset.map_disjoint_keys β₁f p.inj
+by simp only [finset.disjoint_val]; exact multiset.disjoint_keys_map pf p.inj
 
-theorem map_union [decidable_eq α₁] [decidable_eq α₂] (β₁f : sigma.functional β₁)
+theorem map_union [decidable_eq α₁] [decidable_eq α₂] (pf : sigma.fst_functional p)
   (dk : disjoint f.keys g.keys) : (f ∪ g).map p = f.map p ∪ g.map p :=
-ext.mpr $ by simp [dk, map_disjoint_keys β₁f, or_and_distrib_right, exists_or_distrib]
+ext.mpr $ by simp [dk, disjoint_keys_map pf, or_and_distrib_right, exists_or_distrib]
 
 end map
 
