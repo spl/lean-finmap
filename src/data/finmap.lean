@@ -274,13 +274,11 @@ mem_kinsert f.nodup_keys
 
 variables {a : α} {s : sigma β} {f : finmap α β}
 
-@[simp] theorem mem_keys_insert (h : sigma.functional β) :
-  a ∈ keys (insert s f) ↔ a = s.1 ∨ a ∈ keys f :=
-by simp [keys, h]
+@[simp] theorem mem_keys_insert : a ∈ keys (insert s f) ↔ a = s.1 ∨ a ∈ keys f :=
+by simp [keys]
 
-@[simp] theorem insert_keys (h : sigma.functional β) :
-  keys (insert s f) = insert s.1 (keys f) :=
-finset.ext.mpr $ by simp [h]
+@[simp] theorem insert_keys : keys (insert s f) = insert s.1 (keys f) :=
+finset.ext.mpr $ by simp
 
 end insert
 

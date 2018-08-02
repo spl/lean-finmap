@@ -100,10 +100,10 @@ quotient.induction_on m $ λ _, nodup_keys_kinsert s
   ∀ (d : m.nodup_keys), s₁ ∈ kinsert s₂ d ↔ s₁ = s₂ ∨ s₁ ∈ kerase s₂.1 d :=
 quotient.induction_on m $ λ _ _, mem_kinsert
 
-@[simp] theorem mem_keys_kinsert {a : α} (h : sigma.functional β) {s : sigma β}
+@[simp] theorem mem_keys_kinsert {a : α} {s : sigma β}
   {m : multiset (sigma β)} (d : m.nodup_keys) :
   a ∈ (kinsert s d).keys ↔ a = s.1 ∨ a ∈ m.keys :=
-by by_cases h' : a = s.1; simp [keys, exists_or_distrib, h, h']
+by cases s with a' b'; by_cases h' : a = a'; simp [keys, exists_or_distrib, h']
 
 end kinsert
 
