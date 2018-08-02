@@ -12,21 +12,6 @@ by cases s₁; cases s₂; cc
 theorem eq_snd {s₁ s₂ : sigma β} : s₁ = s₂ → s₁.2 == s₂.2 :=
 by cases s₁; cases s₂; cc
 
-/-- `sigma`s of type `β` behave as functions, preserving equality from argument
-(`fst`) to result (`snd`). -/
-def functional (β : α → Type v) : Prop :=
-∀ ⦃s t : sigma β⦄ (h : s.1 = t.1), (eq.rec_on h s.2 : β t.1) = t.2
-
-theorem injective_fst (h : functional β) : function.injective (@fst _ β) :=
-λ s₁ s₂ p, sigma.eq p (h p)
-
-@[simp] theorem fst_eq_of_functional {a : α} {s : sigma β} (h : functional β) :
-  (∃ (b : β a), mk a b = s) ↔ a = s.1 :=
-match s with ⟨a', b'⟩ :=
-  ⟨λ ⟨b, e⟩, eq_fst e,
-   λ (e : a = a'), ⟨(eq.rec_on e.symm b' : β a), sigma.eq e $ @h ⟨a, _⟩ ⟨a', _⟩ e⟩⟩
-end
-
 end
 
 section
@@ -155,22 +140,6 @@ theorem fst_injective_comp (gi : fst_injective g) (fi : fst_injective f) :
 @[simp] theorem embedding.trans_apply (f : β₁ s↪ β₂) (g : β₂ s↪ β₃) (s : sigma β₁) :
   (f.trans g) s = g (f s) :=
 rfl
-
-theorem injective_fst_comp (h : functional β₁) (fi : fst_injective f) :
-  function.injective (fst ∘ f) :=
-λ s t p, @injective_fst _ _ h _ _ (fi p)
-
-theorem injective_of_fst_injective (h : functional β₁) (fi : fst_injective f) :
-  function.injective f :=
-λ s t e, let p := fi (eq_fst e) in sigma.eq p $ h p
-
-theorem fst_injective_of_injective (h : functional β₂) (fi : function.injective f) :
-  fst_injective f :=
-λ s t p, eq_fst $ fi $ sigma.eq p $ h p
-
-theorem fst_injective_iff_injective (h₁ : functional β₁) (h₂ : functional β₂) :
-  fst_injective f ↔ function.injective f :=
-⟨injective_of_fst_injective h₁, fst_injective_of_injective h₂⟩
 
 end
 
