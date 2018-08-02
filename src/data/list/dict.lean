@@ -867,7 +867,7 @@ end
 section
 variables {α₁ α₂ : Type u} {β₁ : α₁ → Type v} {β₂ : α₂ → Type v}
 
-theorem disjoint_keys_map_of_disjoint_keys {l₁ l₂ : list (sigma β₁)}
+theorem map_disjoint_keys_of_disjoint_keys {l₁ l₂ : list (sigma β₁)}
   {f : sigma β₁ → sigma β₂} (fi : sigma.fst_injective f)
   (dk : disjoint l₁.keys l₂.keys) : disjoint (l₁.map f).keys (l₂.map f).keys :=
 λ a h₁ h₂, have h₁ : a ∈ map (sigma.fst ∘ f) l₁, by simpa [keys] using h₁,
@@ -875,16 +875,16 @@ let ⟨s, m, e⟩ := exists_of_mem_map h₁ in
 have e : (f s).1 = a := e,
 dk (mem_keys_of_mem m) (mem_keys_of_mem_keys_map fi (e.symm ▸ h₂))
 
-theorem disjoint_keys_of_disjoint_keys_map {l₁ l₂ : list (sigma β₁)}
+theorem disjoint_keys_of_map_disjoint_keys {l₁ l₂ : list (sigma β₁)}
   {f : sigma β₁ → sigma β₂} (ff : sigma.fst_functional f)
   (dk : disjoint (l₁.map f).keys (l₂.map f).keys) : disjoint l₁.keys l₂.keys :=
 λ a h₁ h₂, let ⟨b₁, h₁⟩ := exists_mem_of_mem_keys h₁ in
 dk (mem_keys_map_of_mem f h₁) (mem_keys_map_of_mem_keys ff h₂)
 
-@[simp] theorem disjoint_keys_map {l₁ l₂ : list (sigma β₁)} {f : sigma β₁ → sigma β₂}
+@[simp] theorem map_disjoint_keys {l₁ l₂ : list (sigma β₁)} {f : sigma β₁ → sigma β₂}
   (ff : sigma.fst_functional f) (fi : sigma.fst_injective f) :
   disjoint (l₁.map f).keys (l₂.map f).keys ↔ disjoint l₁.keys l₂.keys :=
-⟨disjoint_keys_of_disjoint_keys_map ff, disjoint_keys_map_of_disjoint_keys fi⟩
+⟨disjoint_keys_of_map_disjoint_keys ff, map_disjoint_keys_of_disjoint_keys fi⟩
 
 end
 
