@@ -125,6 +125,15 @@ theorem nodup_keys_map_iff {l : list (sigma β₁)} {f : sigma β₁ → sigma �
   (ff : sigma.fst_functional f) (fi : sigma.fst_injective f) : (l.map f).nodup_keys ↔ l.nodup_keys :=
 ⟨nodup_keys_of_nodup_keys_map ff, nodup_keys_map fi⟩
 
+theorem mem_keys_map_of_mem {s : sigma β₁} {l : list (sigma β₁)} (f : sigma β₁ → sigma β₂)
+  (ms : s ∈ l) : (f s).1 ∈ (l.map f).keys :=
+mem_keys_of_mem (mem_map_of_mem f ms)
+
+theorem mem_keys_map {s : sigma β₁} {l : list (sigma β₁)} {f : sigma β₁ → sigma β₂}
+  (ff : sigma.fst_functional f) (h : s.1 ∈ l.keys) : (f s).1 ∈ (l.map f).keys :=
+let ⟨_, m, e⟩ := exists_of_mem_map h in
+ff e ▸ mem_keys_map_of_mem f m
+
 theorem mem_keys_of_mem_keys_map {s : sigma β₁} {l : list (sigma β₁)} {f : sigma β₁ → sigma β₂}
   (fi : sigma.fst_injective f) (h : (f s).1 ∈ (l.map f).keys) : s.1 ∈ l.keys :=
 have h : (sigma.fst ∘ f) s ∈ map (sigma.fst ∘ f) l, by simpa [keys] using h,
@@ -152,19 +161,10 @@ theorem mem_keys_of_mem_map {s : sigma β₁} {l : list (sigma β₁)} {f : sigm
 let ⟨_, m, e⟩ := exists_of_mem_map h in
 fi (sigma.eq_fst e) ▸ mem_keys_of_mem m
 
-theorem mem_keys_map_of_mem {s : sigma β₁} {l : list (sigma β₁)} (f : sigma β₁ → sigma β₂)
-  (ms : s ∈ l) : (f s).1 ∈ (l.map f).keys :=
-mem_keys_of_mem (mem_map_of_mem f ms)
-
-theorem mem_keys_map_of_mem_keys {s : sigma β₁} {l : list (sigma β₁)} {f : sigma β₁ → sigma β₂}
-  (ff : sigma.fst_functional f) (h : s.1 ∈ l.keys) : (f s).1 ∈ (l.map f).keys :=
-let ⟨_, m, e⟩ := exists_of_mem_map h in
-ff e ▸ mem_keys_map_of_mem f m
-
 theorem mem_keys_map_iff {s : sigma β₁} {l : list (sigma β₁)} {f : sigma β₁ → sigma β₂}
   (ff : sigma.fst_functional f) (fi : sigma.fst_injective f) :
   (f s).1 ∈ (l.map f).keys ↔ s.1 ∈ l.keys :=
-⟨mem_keys_of_mem_keys_map fi, mem_keys_map_of_mem_keys ff⟩
+⟨mem_keys_of_mem_keys_map fi, mem_keys_map ff⟩
 
 end
 
@@ -879,7 +879,7 @@ theorem disjoint_keys_of_map_disjoint_keys {l₁ l₂ : list (sigma β₁)}
   {f : sigma β₁ → sigma β₂} (ff : sigma.fst_functional f)
   (dk : disjoint (l₁.map f).keys (l₂.map f).keys) : disjoint l₁.keys l₂.keys :=
 λ a h₁ h₂, let ⟨b₁, h₁⟩ := exists_mem_of_mem_keys h₁ in
-dk (mem_keys_map_of_mem f h₁) (mem_keys_map_of_mem_keys ff h₂)
+dk (mem_keys_map_of_mem f h₁) (mem_keys_map ff h₂)
 
 @[simp] theorem map_disjoint_keys {l₁ l₂ : list (sigma β₁)} {f : sigma β₁ → sigma β₂}
   (ff : sigma.fst_functional f) (fi : sigma.fst_injective f) :

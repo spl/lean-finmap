@@ -173,11 +173,22 @@ quotient.induction_on₂ m₁ m₂ $ λ _ _ _ _, mem_keys_kunion
 end kunion
 
 section map
-variables {α₁ : Type u} {β₁ : α₁ → Type v} {α₂ : Type u} {β₂ : α₂ → Type v} {f : sigma β₁ → sigma β₂}
-variables {m m₁ m₂ : multiset (sigma β₁)}
+variables {α₁ : Type u} {β₁ : α₁ → Type v} {α₂ : Type u} {β₂ : α₂ → Type v}
+variables {s : sigma β₁} {f : sigma β₁ → sigma β₂} {m m₁ m₂ : multiset (sigma β₁)}
 
 theorem nodup_keys_map (fi : sigma.fst_injective f) : m.nodup_keys → (m.map f).nodup_keys :=
 quotient.induction_on m $ λ _, nodup_keys_map fi
+
+theorem mem_keys_map (ff : sigma.fst_functional f) : s.1 ∈ m.keys → (f s).1 ∈ (m.map f).keys :=
+quotient.induction_on m $ λ _, mem_keys_map ff
+
+theorem mem_keys_of_mem_keys_map (fi : sigma.fst_injective f) :
+  (f s).1 ∈ (m.map f).keys → s.1 ∈ m.keys :=
+quotient.induction_on m $ λ _, mem_keys_of_mem_keys_map fi
+
+theorem mem_keys_map_iff (ff : sigma.fst_functional f) (fi : sigma.fst_injective f) :
+  (f s).1 ∈ (m.map f).keys ↔ s.1 ∈ m.keys :=
+⟨mem_keys_of_mem_keys_map fi, mem_keys_map ff⟩
 
 theorem map_disjoint_keys (ff : sigma.fst_functional f) (fi : sigma.fst_injective f) :
   disjoint (m₁.map f).keys (m₂.map f).keys ↔ disjoint m₁.keys m₂.keys :=
