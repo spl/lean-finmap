@@ -102,7 +102,7 @@ theorem mem_of_subset : f ⊆ g → s ∈ f → s ∈ g :=
 mem_of_subset
 
 theorem subset.antisymm (H₁ : f ⊆ g) (H₂ : g ⊆ f) : f = g :=
-ext.mpr $ λ a, ⟨@H₁ a, @H₂ a⟩
+ext' $ λ a, ⟨@H₁ a, @H₂ a⟩
 
 theorem subset_iff : f ⊆ g ↔ ∀ ⦃x⦄, x ∈ f → x ∈ g :=
 iff.rfl
@@ -278,7 +278,7 @@ variables {a : α} {s : sigma β} {f : finmap α β}
 by simp [keys]
 
 @[simp] theorem insert_keys : keys (insert s f) = insert s.1 (keys f) :=
-finset.ext.mpr $ by simp
+finset.ext' $ by simp
 
 end insert
 
@@ -319,9 +319,20 @@ protected def union (f : finmap α β) (g : finmap α β) : finmap α β :=
 instance : has_union (finmap α β) :=
 ⟨finmap.union⟩
 
+@[simp] theorem union_val {f g : finmap α β} : (f ∪ g).val = kunion f.nodup_keys g.nodup_keys :=
+rfl
+
 @[simp] theorem mem_union [decidable_eq α] {s : sigma β}
   {f g : finmap α β} (dk : disjoint f.keys g.keys) : s ∈ f ∪ g ↔ s ∈ f ∨ s ∈ g :=
 mem_kunion f.nodup_keys g.nodup_keys (finset.disjoint_val.mp dk)
+
+variables {a : α} {f g : finmap α β}
+
+@[simp] theorem mem_keys_union : a ∈ keys (f ∪ g) ↔ a ∈ keys f ∨ a ∈ keys g :=
+mem_keys_kunion f.nodup_keys g.nodup_keys
+
+@[simp] theorem union_keys {f g : finmap α β} : (f ∪ g).keys = f.keys ∪ g.keys :=
+finset.ext' $ by simp [mem_keys_union]
 
 end union
 
@@ -348,7 +359,7 @@ by simp [mem_def]
 mem_map.mpr ⟨_, h, rfl⟩
 
 theorem map_refl : f.map (sigma.embedding.refl _) = f :=
-ext.mpr $ by simp [sigma.embedding.refl]
+ext' $ by simp [sigma.embedding.refl]
 
 theorem map_map : (f.map p).map q = f.map (p.trans q) :=
 eq_of_veq $ by simp [erase_dup_map_erase_dup_eq]
@@ -362,7 +373,7 @@ by simp only [finset.disjoint_val]; exact multiset.map_disjoint_keys pf p.inj
 
 theorem map_union [decidable_eq α₁] [decidable_eq α₂] (pf : sigma.fst_functional p)
   (dk : disjoint f.keys g.keys) : (f ∪ g).map p = f.map p ∪ g.map p :=
-ext.mpr $ by simp [dk, map_disjoint_keys pf, or_and_distrib_right, exists_or_distrib]
+ext' $ by simp [dk, map_disjoint_keys pf, or_and_distrib_right, exists_or_distrib]
 
 end map
 

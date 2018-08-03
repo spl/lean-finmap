@@ -166,6 +166,10 @@ quotient.induction_on₂ m₁ m₂ $ λ _ _ _ _, mem_kunion_iff
   ∀ (d₁ : m₁.nodup_keys) (d₂ : m₂.nodup_keys), (kunion d₁ d₂).nodup_keys :=
 quotient.induction_on₂ m₁ m₂ $ λ _ _, nodup_keys_kunion
 
+@[simp] theorem mem_keys_kunion {a : α} : ∀ (d₁ : m₁.nodup_keys) (d₂ : m₂.nodup_keys),
+  a ∈ keys (kunion d₁ d₂) ↔ a ∈ m₁.keys ∨ a ∈ m₂.keys :=
+quotient.induction_on₂ m₁ m₂ $ λ _ _ _ _, mem_keys_kunion
+
 end kunion
 
 section map
