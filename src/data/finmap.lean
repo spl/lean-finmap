@@ -332,7 +332,7 @@ variables {a : α} {f g : finmap α β}
 mem_keys_kunion f.nodup_keys g.nodup_keys
 
 @[simp] theorem union_keys : (f ∪ g).keys = f.keys ∪ g.keys :=
-finset.ext' $ by simp [mem_keys_union]
+finset.ext' $ by simp
 
 end union
 
