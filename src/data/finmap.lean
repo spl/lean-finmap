@@ -390,4 +390,28 @@ ext' $ by simp [dk, map_disjoint_keys pf, or_and_distrib_right, exists_or_distri
 
 end map
 
+section map_snd
+variables {β₁ β₂ : α → Type v} {s : sigma β₁} {f : finmap α β₁}
+
+def map_snd (p : ∀ a, β₁ a → β₂ a) : finmap α β₁ → finmap α β₂ :=
+map (sigma.embedding.mk₂ p)
+
+@[simp] theorem map_snd_val (p : ∀ (a : α), β₁ a → β₂ a) (f : finmap α β₁) :
+  (f.map_snd p).val = f.val.map_snd p :=
+rfl
+
+@[simp] theorem mem_keys_map_snd (p : ∀ a, β₁ a → β₂ a) :
+  s.1 ∈ (f.map_snd p).keys ↔ s.1 ∈ f.keys :=
+by simp [keys]
+
+@[simp] theorem mem_keys_map_snd_inh [∀ a, inhabited (β₁ a)] {a} (p : ∀ a, β₁ a → β₂ a) :
+  a ∈ (f.map_snd p).keys ↔ a ∈ f.keys :=
+by simp [keys]
+
+@[simp] theorem map_snd_keys [∀ a, inhabited (β₁ a)] (p : ∀ a, β₁ a → β₂ a) :
+  (f.map_snd p).keys = f.keys :=
+finset.ext' $ λ _, mem_keys_map_snd_inh p
+
+end map_snd
+
 end finmap

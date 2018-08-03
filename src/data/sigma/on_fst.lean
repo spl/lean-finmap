@@ -61,9 +61,13 @@ variables {α : Type u} {β₁ β₂ : α → Type v}
 def map_snd (f : ∀ (a : α), β₁ a → β₂ a) : sigma β₁ → sigma β₂ :=
 have sigma β₁ → sigma (id β₂) := map id f, by exact this
 
+@[simp] theorem map_snd_eq_fst {s : sigma β₁} (f : ∀ (a : α), β₁ a → β₂ a) :
+  (s.map_snd f).1 = s.1 :=
+by cases s; refl
+
 theorem map_snd_eq_fst_iff {s₁ s₂ : sigma β₁} (f : ∀ (a : α), β₁ a → β₂ a) :
-  (map_snd f s₁).1 = (map_snd f s₂).1 ↔ s₁.1 = s₂.1 :=
-by cases s₁; cases s₂; exact iff.rfl
+  (s₁.map_snd f).1 = (s₂.map_snd f).1 ↔ s₁.1 = s₂.1 :=
+by cases s₁; cases s₂; refl
 
 theorem map_snd_fst_functional (f : ∀ (a : α), β₁ a → β₂ a) :
   fst_functional (map_snd f) :=

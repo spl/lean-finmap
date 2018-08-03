@@ -21,8 +21,20 @@ nodup_keys_singleton
 def keys : multiset (sigma β) → multiset α :=
 map sigma.fst
 
-@[simp] theorem keys_coe (l : list (sigma β)) : keys (l : multiset (sigma β)) = (l.keys : multiset α) :=
+@[simp] theorem keys_coe (l : list (sigma β)) :
+  keys (l : multiset (sigma β)) = (l.keys : multiset α) :=
 rfl
+
+theorem mem_keys_of_mem {s : sigma β} {m : multiset (sigma β)} : s ∈ m → s.1 ∈ m.keys :=
+mem_map_of_mem sigma.fst
+
+theorem exists_mem_of_mem_keys {a : α} {m : multiset (sigma β)} (h : a ∈ m.keys) :
+  ∃ (b : β a), sigma.mk a b ∈ m :=
+let ⟨⟨a', b'⟩, m, e⟩ := mem_map.mp h in
+eq.rec_on e (exists.intro b' m)
+
+theorem mem_keys {a : α} {m : multiset (sigma β)} : a ∈ m.keys ↔ ∃ (b : β a), sigma.mk a b ∈ m :=
+⟨exists_mem_of_mem_keys, λ ⟨_, h⟩, mem_keys_of_mem h⟩
 
 theorem nodup_keys_iff {s : multiset (sigma β)} : s.keys.nodup ↔ s.nodup_keys :=
 quotient.induction_on s $ λ _, list.nodup_keys_iff
@@ -195,5 +207,33 @@ theorem map_disjoint_keys (ff : sigma.fst_functional f) (fi : sigma.fst_injectiv
 quotient.induction_on₂ m₁ m₂ $ λ _ _, map_disjoint_keys ff fi
 
 end map
+
+section map_snd
+variables {β₁ β₂ : α → Type v} {s : sigma β₁} {m : multiset (sigma β₁)}
+
+def map_snd (f : ∀ a, β₁ a → β₂ a) : multiset (sigma β₁) → multiset (sigma β₂) :=
+map (sigma.map_snd f)
+
+@[simp] theorem mem_keys_map_snd (f : ∀ (a : α), β₁ a → β₂ a) :
+  s.1 ∈ (m.map_snd f).keys ↔ s.1 ∈ m.keys :=
+have h : (s.map_snd f).1 ∈ (m.map_snd f).keys ↔ s.1 ∈ m.keys :=
+mem_keys_map_iff (sigma.map_snd_fst_functional _) (sigma.map_snd_fst_injective _),
+by simpa using h
+
+theorem mem_keys_map_snd_of_mem_keys {a} (f : ∀ (a : α), β₁ a → β₂ a) :
+  a ∈ m.keys → a ∈ (m.map_snd f).keys :=
+λ ma, let ⟨b, mab⟩ := exists_mem_of_mem_keys ma in
+(@mem_keys_map_snd _ _ _ ⟨a, b⟩ _ f).mpr ma
+
+theorem mem_keys_of_mem_keys_map_snd_inh [∀ a, inhabited (β₁ a)] {a}
+  (f : ∀ (a : α), β₁ a → β₂ a) : a ∈ (m.map_snd f).keys → a ∈ m.keys :=
+λ ma, let ⟨b, mab⟩ := exists_mem_of_mem_keys ma in
+(@mem_keys_map_snd _ _ _ ⟨a, default (β₁ a)⟩ _ f).mp ma
+
+@[simp] theorem mem_keys_map_snd_inh [∀ a, inhabited (β₁ a)] {a} (f : ∀ (a : α), β₁ a → β₂ a) :
+  a ∈ (m.map_snd f).keys ↔ a ∈ m.keys :=
+⟨mem_keys_of_mem_keys_map_snd_inh f, mem_keys_map_snd_of_mem_keys f⟩
+
+end map_snd
 
 end multiset
