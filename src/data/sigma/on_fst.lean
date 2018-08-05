@@ -31,8 +31,8 @@ end
 
 /-- A function on `sigma`s bundled with its `fst`-injectivity property. -/
 structure embedding {α₁ α₂ : Type u} (β₁ : α₁ → Type v) (β₂ : α₂ → Type v) :=
-(to_fun : sigma β₁ → sigma β₂)
-(inj    : fst_injective to_fun)
+(to_fun  : sigma β₁ → sigma β₂)
+(fst_inj : fst_injective to_fun)
 
 infixr ` s↪ `:25 := embedding
 
@@ -49,7 +49,7 @@ rfl
   (mk f i : sigma β₁ → sigma β₂) = f :=
 rfl
 
-theorem inj' : ∀ (f : β₁ s↪ β₂), fst_injective f
+theorem fst_inj' : ∀ (f : β₁ s↪ β₂), fst_injective f
 | ⟨_, h⟩ := h
 
 end embedding
@@ -139,7 +139,7 @@ theorem fst_injective_comp (gi : fst_injective g) (fi : fst_injective f) :
 λ s t h, fi (gi h)
 
 @[trans] protected def embedding.trans (f : β₁ s↪ β₂) (g : β₂ s↪ β₃) : β₁ s↪ β₃ :=
-⟨_, fst_injective_comp g.inj f.inj⟩
+⟨_, fst_injective_comp g.fst_inj f.fst_inj⟩
 
 @[simp] theorem embedding.trans_apply (f : β₁ s↪ β₂) (g : β₂ s↪ β₃) (s : sigma β₁) :
   (f.trans g) s = g (f s) :=

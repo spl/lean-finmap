@@ -342,7 +342,7 @@ section map
 variables {α₁ α₂ α₃ : Type u} {β₁ : α₁ → Type v} {β₂ : α₂ → Type v} {β₃ : α₃ → Type v}
 
 def map (p : β₁ s↪ β₂) (f : finmap α₁ β₁) : finmap α₂ β₂ :=
-⟨f.val.map p, nodup_keys_map p.inj f.nodup_keys⟩
+⟨f.val.map p, nodup_keys_map p.fst_inj f.nodup_keys⟩
 
 @[simp] theorem map_val (p : β₁ s↪ β₂) (f : finmap α₁ β₁) : (f.map p).val = f.val.map p :=
 rfl
@@ -374,7 +374,7 @@ theorem mem_keys_map (pf : sigma.fst_functional p) :
 mem_keys_map pf
 
 theorem mem_keys_of_mem_keys_map : (p s).1 ∈ (f.map p).keys → s.1 ∈ f.keys :=
-mem_keys_of_mem_keys_map p.inj
+mem_keys_of_mem_keys_map p.fst_inj
 
 theorem mem_keys_map_iff (pf : sigma.fst_functional p) :
   (p s).1 ∈ (f.map p).keys ↔ s.1 ∈ f.keys :=
@@ -382,7 +382,7 @@ theorem mem_keys_map_iff (pf : sigma.fst_functional p) :
 
 theorem map_disjoint_keys [decidable_eq α₁] [decidable_eq α₂] (pf : sigma.fst_functional p) :
   disjoint (f.map p).keys (g.map p).keys ↔ disjoint f.keys g.keys :=
-by simp only [finset.disjoint_val]; exact multiset.map_disjoint_keys pf p.inj
+by simp only [finset.disjoint_val]; exact multiset.map_disjoint_keys pf p.fst_inj
 
 theorem map_union [decidable_eq α₁] [decidable_eq α₂] (pf : sigma.fst_functional p)
   (dk : disjoint f.keys g.keys) : (f ∪ g).map p = f.map p ∪ g.map p :=
