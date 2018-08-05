@@ -225,12 +225,14 @@ theorem mem_keys_map_snd_of_mem_keys {a} (f : ∀ (a : α), β₁ a → β₂ a)
 λ ma, let ⟨b, mab⟩ := exists_mem_of_mem_keys ma in
 (@mem_keys_map_snd _ _ _ ⟨a, b⟩ _ f).mpr ma
 
-theorem mem_keys_of_mem_keys_map_snd_inh [∀ a, inhabited (β₁ a)] {a}
+-- Is this useful?
+theorem mem_keys_of_mem_keys_map_snd_inh [inhabited (∀ a, β₁ a)] {a}
   (f : ∀ (a : α), β₁ a → β₂ a) : a ∈ (m.map_snd f).keys → a ∈ m.keys :=
 λ ma, let ⟨b, mab⟩ := exists_mem_of_mem_keys ma in
-(@mem_keys_map_snd _ _ _ ⟨a, default (β₁ a)⟩ _ f).mp ma
+(@mem_keys_map_snd _ _ _ ⟨a, default (∀ a, β₁ a) a⟩ _ f).mp ma
 
-@[simp] theorem mem_keys_map_snd_inh [∀ a, inhabited (β₁ a)] {a} (f : ∀ (a : α), β₁ a → β₂ a) :
+-- Is this useful?
+@[simp] theorem mem_keys_map_snd_inh [inhabited (∀ a, β₁ a)] {a} (f : ∀ (a : α), β₁ a → β₂ a) :
   a ∈ (m.map_snd f).keys ↔ a ∈ m.keys :=
 ⟨mem_keys_of_mem_keys_map_snd_inh f, mem_keys_map_snd_of_mem_keys f⟩
 

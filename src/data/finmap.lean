@@ -404,11 +404,13 @@ rfl
   s.1 ∈ (f.map_snd p).keys ↔ s.1 ∈ f.keys :=
 by simp [keys]
 
-@[simp] theorem mem_keys_map_snd_inh [∀ a, inhabited (β₁ a)] {a} (p : ∀ a, β₁ a → β₂ a) :
+-- Is this useful?
+@[simp] theorem mem_keys_map_snd_inh [inhabited (∀ a, β₁ a)] {a} (p : ∀ a, β₁ a → β₂ a) :
   a ∈ (f.map_snd p).keys ↔ a ∈ f.keys :=
 by simp [keys]
 
-@[simp] theorem map_snd_keys [∀ a, inhabited (β₁ a)] (p : ∀ a, β₁ a → β₂ a) :
+-- Is this useful?
+@[simp] theorem map_snd_keys [inhabited (∀ a, β₁ a)] (p : ∀ a, β₁ a → β₂ a) :
   (f.map_snd p).keys = f.keys :=
 finset.ext' $ λ _, mem_keys_map_snd_inh p
 
