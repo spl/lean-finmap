@@ -13,7 +13,8 @@ quotient.lift_on s nodup_keys (λ _ _, propext ∘ perm_nodup_keys)
 theorem nodup_of_nodup_keys {s : multiset (sigma β)} : s.nodup_keys → s.nodup :=
 quotient.induction_on s $ λ _, nodup_of_nodup_keys
 
-@[simp] theorem nodup_keys_zero : @nodup_keys α β 0 := pairwise.nil _
+@[simp] theorem nodup_keys_zero : @nodup_keys _ β 0 :=
+pairwise.nil _
 
 theorem nodup_keys_singleton : ∀ (s : sigma β), nodup_keys (s :: 0) :=
 nodup_keys_singleton
@@ -170,16 +171,18 @@ def kunion : m₁.nodup_keys → m₂.nodup_keys → multiset (sigma β) :=
         λ (d₂ : l₂.nodup_keys) (d₄ : l₄.nodup_keys) _,
         heq_of_eq $ quotient.sound $ perm_kunion d₂ d₄ p₁₃ p₂₄
 
+local infixr ` k∪ `:67 := kunion
+
 @[simp] theorem mem_kunion {s : sigma β} : ∀ (d₁ : m₁.nodup_keys) (d₂ : m₂.nodup_keys),
-  disjoint m₁.keys m₂.keys → (s ∈ kunion d₁ d₂ ↔ s ∈ m₁ ∨ s ∈ m₂) :=
+  disjoint m₁.keys m₂.keys → (s ∈ d₁ k∪ d₂ ↔ s ∈ m₁ ∨ s ∈ m₂) :=
 quotient.induction_on₂ m₁ m₂ $ λ _ _ _ _, mem_kunion_iff
 
 @[simp] theorem nodup_keys_kunion :
-  ∀ (d₁ : m₁.nodup_keys) (d₂ : m₂.nodup_keys), (kunion d₁ d₂).nodup_keys :=
+  ∀ (d₁ : m₁.nodup_keys) (d₂ : m₂.nodup_keys), (d₁ k∪ d₂).nodup_keys :=
 quotient.induction_on₂ m₁ m₂ $ λ _ _, nodup_keys_kunion
 
 @[simp] theorem mem_keys_kunion {a : α} : ∀ (d₁ : m₁.nodup_keys) (d₂ : m₂.nodup_keys),
-  a ∈ keys (kunion d₁ d₂) ↔ a ∈ m₁.keys ∨ a ∈ m₂.keys :=
+  a ∈ keys (d₁ k∪ d₂) ↔ a ∈ m₁.keys ∨ a ∈ m₂.keys :=
 quotient.induction_on₂ m₁ m₂ $ λ _ _ _ _, mem_keys_kunion
 
 end kunion

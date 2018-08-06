@@ -135,11 +135,8 @@ end subset
 
 section empty
 
-protected def empty : finmap α β :=
-⟨0, nodup_keys_zero⟩
-
 instance : has_emptyc (finmap α β) :=
-⟨finmap.empty⟩
+⟨⟨_, nodup_keys_zero⟩⟩
 
 instance : inhabited (finmap α β) :=
 ⟨∅⟩
@@ -193,7 +190,8 @@ theorem mem_singleton_self (a : sigma β) : a ∈ ι a := by simp
 theorem singleton_inj {a b : sigma β} : ι a = ι b ↔ a = b :=
 ⟨λ h, mem_singleton.mp (h ▸ mem_singleton_self _), congr_arg _⟩
 
-@[simp] theorem singleton_ne_empty (a : sigma β) : ι a ≠ ∅ := ne_empty_of_mem (mem_singleton_self _)
+@[simp] theorem singleton_ne_empty (a : sigma β) : ι a ≠ ∅ :=
+ne_empty_of_mem (mem_singleton_self _)
 
 @[simp] lemma coe_singleton (a : sigma β) : ↑(ι a) = ({a} : set (sigma β)) :=
 by simp [set.ext_iff]
@@ -210,6 +208,12 @@ rfl
 
 @[simp] theorem keys_empty : keys (∅ : finmap α β) = ∅ :=
 rfl
+
+@[simp] theorem keys_singleton {s : sigma β} : keys (ι s) = finset.singleton s.1 :=
+rfl
+
+@[simp] theorem mem_keys_singleton {a : α} {s : sigma β} : a ∈ keys (ι s) ↔ a = s.1 :=
+by simp
 
 @[simp] theorem mem_insert_keys [decidable_eq α] {a₁ a₂ : α} {f : finmap α β} :
   a₁ ∈ insert a₂ (keys f) ↔ a₁ = a₂ ∨ a₁ ∈ keys f :=
@@ -239,7 +243,7 @@ by simp
   a₁ ∈ keys (f.erase a₂) ↔ a₁ ≠ a₂ ∧ a₁ ∈ keys f :=
 by simp [keys]
 
-@[simp] theorem erase_empty (a : α) : erase ∅ a = (∅ : finmap α β) :=
+@[simp] theorem erase_empty (β : α → Type v) (a) : erase ∅ a = (∅ : finmap α β) :=
 rfl
 
 theorem ne_of_mem_erase {s : sigma β} {a : α} {f : finmap α β} : s ∈ f.erase a → s.1 ≠ a :=
@@ -290,7 +294,7 @@ variables [decidable_eq α]
 def lookup (a : α) (f : finmap α β) : option (β a) :=
 klookup a f.nodup_keys
 
-theorem lookup_empty (a : α) : lookup a (∅ : finmap α β) = none :=
+theorem lookup_empty (β : α → Type v) (a) : lookup a (∅ : finmap α β) = none :=
 rfl
 
 end lookup
