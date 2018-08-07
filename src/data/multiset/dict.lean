@@ -1,5 +1,6 @@
 import data.list.dict
 import data.multiset
+import data.pfun
 
 namespace multiset
 universes u v
@@ -157,7 +158,7 @@ quotient.induction_on m $ λ _, nodup_keys_kreplace s
 end kreplace
 
 section kunion
-variables [decidable_eq α] {m₁ m₂ : multiset (sigma β)}
+variables [decidable_eq α] {m m₁ m₂ : multiset (sigma β)}
 
 def kunion : m₁.nodup_keys → m₂.nodup_keys → multiset (sigma β) :=
 @quotient.hrec_on₂ _ _ _ _
@@ -184,6 +185,28 @@ quotient.induction_on₂ m₁ m₂ $ λ _ _, nodup_keys_kunion
 @[simp] theorem mem_keys_kunion {a : α} : ∀ (d₁ : m₁.nodup_keys) (d₂ : m₂.nodup_keys),
   a ∈ keys (d₁ k∪ d₂) ↔ a ∈ m₁.keys ∨ a ∈ m₂.keys :=
 quotient.induction_on₂ m₁ m₂ $ λ _ _ _ _, mem_keys_kunion
+
+def kunion' (m₁ m₂ : multiset (sigma β)) : roption (multiset (sigma β)) :=
+quotient.lift_on₂ m₁ m₂
+  (λ l₁ l₂, roption.mk (l₁.nodup_keys ∧ l₂.nodup_keys) (λ _, (l₁.kunion l₂ : multiset (sigma β))))
+  (λ l₁ l₂ l₃ l₄ p₁₃ p₂₄, roption.ext'
+    (and_congr (perm_nodup_keys p₁₃) (perm_nodup_keys p₂₄))
+    (λ ⟨d₁, d₂⟩ ⟨d₃, d₄⟩, quotient.sound $ perm_kunion d₂ d₄ p₁₃ p₂₄))
+
+@[simp] theorem kunion_coe {l₁ l₂ : list (sigma β)} (d₁ : l₁.nodup_keys) (d₂ : l₂.nodup_keys) :
+  kunion' ↑l₁ ↑l₂ = roption.some (l₁.kunion l₂ : multiset (sigma β)) :=
+roption.eq_some_iff.mpr ⟨⟨d₁, d₂⟩, rfl⟩
+
+@[simp] theorem mem_kunion' {s : sigma β} : ∀ (d₁ : m₁.nodup_keys) (d₂ : m₂.nodup_keys),
+  disjoint m₁.keys m₂.keys → ∃ m ∈ kunion' m₁ m₂, s ∈ m ↔ s ∈ m₁ ∨ s ∈ m₂ :=
+quotient.induction_on₂ m₁ m₂ $ λ l₁ l₂ d₁ d₂ dk,
+  ⟨_, roption.eq_some_iff.mp (kunion_coe d₁ d₂), mem_kunion_iff dk⟩
+
+@[simp] theorem zero_kunion : ∀ (d : m.nodup_keys), kunion' 0 m = roption.some m :=
+quotient.induction_on m $ λ _ d, (kunion_coe nodup_keys_zero d).trans rfl
+
+@[simp] theorem kunion_zero : ∀ (d : m.nodup_keys), kunion' m 0 = roption.some m :=
+quotient.induction_on m $ λ _ d, (kunion_coe d nodup_keys_zero).trans (by simp)
 
 end kunion
 
