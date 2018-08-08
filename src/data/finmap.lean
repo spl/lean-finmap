@@ -208,14 +208,14 @@ end empty
 /- singleton -/
 
 section singleton
+variables {s₁ s₂ : sigma β}
 
 /-- `singleton s` is the set `{s}` containing `s` and nothing else. -/
 def singleton (s : sigma β) : finmap α β :=
 ⟨⟦[s]⟧, nodup_keys_singleton s⟩
 
-@[simp] theorem singleton_val (s : sigma β) : (singleton s).val = s :: 0 := rfl
-
-variables {s₁ s₂ : sigma β}
+@[simp] theorem singleton_val (s : sigma β) : (singleton s).val = s :: 0 :=
+rfl
 
 @[simp] theorem mem_singleton : s₁ ∈ singleton s₂ ↔ s₁ = s₂ :=
 by simp [singleton]
@@ -380,9 +380,9 @@ end αβ
 
 section α₁α₂α₃β₁β₂β₃
 variables {α₁ α₂ α₃ : Type u} {β₁ : α₁ → Type v} {β₂ : α₂ → Type v} {β₃ : α₃ → Type v}
-variables {p : β₁ s↪ β₂} {q : β₂ s↪ β₃} {s₁ : sigma β₁} {s₂ : sigma β₂} {f g : finmap α₁ β₁}
 
 section map
+variables {p : β₁ s↪ β₂} {q : β₂ s↪ β₃} {s₁ : sigma β₁} {s₂ : sigma β₂} {f g : finmap α₁ β₁}
 
 def map (p : β₁ s↪ β₂) (f : finmap α₁ β₁) : finmap α₂ β₂ :=
 ⟨f.val.map p, nodup_keys_map p.fst_inj f.nodup_keys⟩
@@ -432,11 +432,12 @@ end map
 end α₁α₂α₃β₁β₂β₃
 
 section αβ₁β₂
-variables {α : Type u} {β₁ β₂ : α → Type v} {s : sigma β₁} {f : finmap α β₁}
+variables {α : Type u} {β₁ β₂ : α → Type v}
 
 /- map_snd -/
 
 section map_snd
+variables {s : sigma β₁} {f : finmap α β₁}
 
 def map_snd (p : ∀ a, β₁ a → β₂ a) : finmap α β₁ → finmap α β₂ :=
 map (sigma.embedding.mk₂ p)
