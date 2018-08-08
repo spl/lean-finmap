@@ -234,15 +234,15 @@ quotient.induction_on₂ m₁ m₂ $ λ _ _, map_disjoint_keys ff fi
 
 end map
 
-section map_snd
+section map₂
 variables {β₁ β₂ : α → Type v} {s : sigma β₁} {m : multiset (sigma β₁)}
 
-def map_snd (f : ∀ a, β₁ a → β₂ a) : multiset (sigma β₁) → multiset (sigma β₂) :=
-map (sigma.map_snd f)
+def map₂ (f : ∀ a, β₁ a → β₂ a) : multiset (sigma β₁) → multiset (sigma β₂) :=
+map (sigma.map₂ f)
 
-@[simp] theorem map_snd_keys (f : ∀ a, β₁ a → β₂ a) : (m.map_snd f).keys = m.keys :=
-by simp [keys, map_snd]
+@[simp] theorem map₂_keys (f : ∀ a, β₁ a → β₂ a) : (m.map₂ f).keys = m.keys :=
+by simp [keys, map₂]
 
-end map_snd
+end map₂
 
 end multiset

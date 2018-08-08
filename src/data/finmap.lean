@@ -434,22 +434,22 @@ end α₁α₂α₃β₁β₂β₃
 section αβ₁β₂
 variables {α : Type u} {β₁ β₂ : α → Type v}
 
-/- map_snd -/
+/- map₂ -/
 
-section map_snd
+section map₂
 variables {s : sigma β₁} {f : finmap α β₁}
 
-def map_snd (p : ∀ a, β₁ a → β₂ a) : finmap α β₁ → finmap α β₂ :=
+def map₂ (p : ∀ a, β₁ a → β₂ a) : finmap α β₁ → finmap α β₂ :=
 map (sigma.embedding.mk₂ p)
 
-@[simp] theorem map_snd_val (p : ∀ (a : α), β₁ a → β₂ a) (f : finmap α β₁) :
-  (f.map_snd p).val = f.val.map_snd p :=
+@[simp] theorem map₂_val (p : ∀ (a : α), β₁ a → β₂ a) (f : finmap α β₁) :
+  (f.map₂ p).val = f.val.map₂ p :=
 rfl
 
-@[simp] theorem map_snd_keys (p : ∀ a, β₁ a → β₂ a) : (f.map_snd p).keys = f.keys :=
+@[simp] theorem map₂_keys (p : ∀ a, β₁ a → β₂ a) : (f.map₂ p).keys = f.keys :=
 finset.val_inj.mp $ by simp
 
-end map_snd
+end map₂
 
 end αβ₁β₂
 

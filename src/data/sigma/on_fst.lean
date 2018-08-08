@@ -57,29 +57,29 @@ end embedding
 section
 variables {α : Type u} {β₁ β₂ : α → Type v}
 
-/-- Map `id` over `fst` and a function over `snd`. -/
-def map_snd (f : ∀ (a : α), β₁ a → β₂ a) : sigma β₁ → sigma β₂ :=
-have sigma β₁ → sigma (id β₂) := map id f, by exact this
+/-- Map a function over `snd` while preserving `fst` -/
+def map₂ (f : ∀ (a : α), β₁ a → β₂ a) : sigma β₁ → sigma β₂ :=
+map id f
 
-@[simp] theorem map_snd_eq_fst {s : sigma β₁} (f : ∀ (a : α), β₁ a → β₂ a) :
-  (s.map_snd f).1 = s.1 :=
+@[simp] theorem map₂_eq_fst {s : sigma β₁} (f : ∀ (a : α), β₁ a → β₂ a) :
+  (s.map₂ f).1 = s.1 :=
 by cases s; refl
 
-theorem map_snd_eq_fst_iff {s₁ s₂ : sigma β₁} (f : ∀ (a : α), β₁ a → β₂ a) :
-  (s₁.map_snd f).1 = (s₂.map_snd f).1 ↔ s₁.1 = s₂.1 :=
+theorem map₂_eq_fst_iff {s₁ s₂ : sigma β₁} (f : ∀ (a : α), β₁ a → β₂ a) :
+  (s₁.map₂ f).1 = (s₂.map₂ f).1 ↔ s₁.1 = s₂.1 :=
 by cases s₁; cases s₂; refl
 
-theorem map_snd_fst_functional (f : ∀ (a : α), β₁ a → β₂ a) :
-  fst_functional (map_snd f) :=
-λ _ _, (map_snd_eq_fst_iff f).mpr
+theorem map₂_fst_functional (f : ∀ (a : α), β₁ a → β₂ a) :
+  fst_functional (map₂ f) :=
+λ _ _, (map₂_eq_fst_iff f).mpr
 
-theorem map_snd_fst_injective (f : ∀ (a : α), β₁ a → β₂ a) :
-  fst_injective (map_snd f) :=
-λ _ _, (map_snd_eq_fst_iff f).mp
+theorem map₂_fst_injective (f : ∀ (a : α), β₁ a → β₂ a) :
+  fst_injective (map₂ f) :=
+λ _ _, (map₂_eq_fst_iff f).mp
 
 /-- Construct an `embedding` with `id` on `fst`. -/
 def embedding.mk₂ (f : ∀ (a : α), β₁ a → β₂ a) : embedding β₁ β₂ :=
-⟨_, map_snd_fst_injective f⟩
+⟨_, map₂_fst_injective f⟩
 
 end
 

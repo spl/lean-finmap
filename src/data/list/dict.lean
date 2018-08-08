@@ -168,9 +168,9 @@ theorem mem_keys_map_iff {s : sigma β₁} {l : list (sigma β₁)} {f : sigma �
 
 end
 
-theorem nodup_keys_map_snd_iff {β₁ β₂ : α → Type v} {l : list (sigma β₁)}
-  (f : ∀ (a : α), β₁ a → β₂ a) : (l.map (sigma.map_snd f)).nodup_keys ↔ l.nodup_keys :=
-nodup_keys_map_iff (sigma.map_snd_fst_functional f) (sigma.map_snd_fst_injective f)
+theorem nodup_keys_map₂_iff {β₁ β₂ : α → Type v} {l : list (sigma β₁)}
+  (f : ∀ (a : α), β₁ a → β₂ a) : (l.map (sigma.map₂ f)).nodup_keys ↔ l.nodup_keys :=
+nodup_keys_map_iff (sigma.map₂_fst_functional f) (sigma.map₂_fst_injective f)
 
 theorem perm_nodup_keys (p : l₁ ~ l₂) : l₁.nodup_keys ↔ l₂.nodup_keys :=
 perm_pairwise (@sigma.fst_rel.symm α β (≠) (@ne.symm α)) p
