@@ -1,4 +1,4 @@
-import data.finset data.multiset.dict
+import data.finset data.multiset.dict data.pfun logic.function
 
 local attribute [-simp] sigma.forall sigma.exists
 
@@ -27,6 +27,43 @@ end val
 instance has_decidable_eq [decidable_eq α] [∀ a, decidable_eq (β a)] :
   decidable_eq (finmap α β)
 | f g := decidable_of_iff _ val_inj
+
+section rec
+open function
+
+/-- Dependent recursor on a finmap for a list -/
+protected def lrec_on {γ : Sort*} (f : finmap α β)
+  (φ : ∀ {l : list (sigma β)}, l.nodup_keys → γ)
+  (c : ∀ {l₁ l₂} (p : l₁ ~ l₂) d₁ d₂, φ d₁ = φ d₂) :
+  f.val.nodup_keys → γ :=
+quotient.hrec_on f.val (λ l (d : l.nodup_keys), φ d) $ λ l₁ l₂ p,
+  hfunext (by rw list.perm_nodup_keys p) $ λ d₁ d₂ _, heq_of_eq $ c p d₁ d₂
+
+/-- Dependent recursor on two finmaps for lists -/
+protected def lrec_on₂ {γ : Type*} (f g : finmap α β)
+  (φ : ∀ {l₁ l₂ : list (sigma β)}, l₁.nodup_keys → l₂.nodup_keys → γ)
+  (c : ∀ {l₁ l₂ l₃ l₄} (p₁₃ : l₁ ~ l₃) (p₂₄ : l₂ ~ l₄) d₁ d₂ d₃ d₄, φ d₁ d₂ = φ d₃ d₄) :
+  f.val.nodup_keys → g.val.nodup_keys → γ :=
+@quotient.hrec_on₂ _ _ _ _
+  (λ (m₁ m₂ : multiset (sigma β)), m₁.nodup_keys → m₂.nodup_keys → γ)
+  f.val g.val
+  (λ l₁ l₂ (d₁ : l₁.nodup_keys) (d₂ : l₂.nodup_keys), φ d₁ d₂)
+  (λ l₁ l₂ l₃ l₄ p₁₃ p₂₄, hfunext (by rw list.perm_nodup_keys p₁₃) $
+    λ d₁ d₃ _, hfunext (by rw list.perm_nodup_keys p₂₄) $
+      λ d₂ d₄ _, heq_of_eq $ c p₁₃ p₂₄ d₁ d₂ d₃ d₄)
+
+/-- Lift a function on 2 lists to a function on 2 finmaps  -/
+protected def lift_on₂ {γ : Type*} (f g : finmap α β)
+  (φ : ∀ {l₁ l₂ : list (sigma β)}, l₁.nodup_keys → l₂.nodup_keys → γ)
+  (c : ∀ {l₁ l₂ l₃ l₄} (p₁₃ : l₁ ~ l₃) (p₂₄ : l₂ ~ l₄) d₁ d₂ d₃ d₄, φ d₁ d₂ = φ d₃ d₄) :
+  roption γ :=
+quotient.lift_on₂ f.val g.val
+  (λ l₁ l₂, roption.mk (l₁.nodup_keys ∧ l₂.nodup_keys) (λ ⟨d₁, d₂⟩, φ d₁ d₂))
+  (λ l₁ l₂ l₃ l₄ p₁₃ p₂₄, roption.ext'
+    (and_congr (list.perm_nodup_keys p₁₃) (list.perm_nodup_keys p₂₄))
+    (λ ⟨d₁, d₂⟩ ⟨d₃, d₄⟩, c p₁₃ p₂₄ d₁ d₂ d₃ d₄))
+
+end rec
 
 /- membership -/
 
