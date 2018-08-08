@@ -446,19 +446,8 @@ map (sigma.embedding.mk₂ p)
   (f.map_snd p).val = f.val.map_snd p :=
 rfl
 
-@[simp] theorem mem_keys_map_snd (p : ∀ a, β₁ a → β₂ a) :
-  s.1 ∈ (f.map_snd p).keys ↔ s.1 ∈ f.keys :=
-by simp [keys]
-
--- Is this useful?
-@[simp] theorem mem_keys_map_snd_inh [inhabited (∀ a, β₁ a)] {a} (p : ∀ a, β₁ a → β₂ a) :
-  a ∈ (f.map_snd p).keys ↔ a ∈ f.keys :=
-by simp [keys]
-
--- Is this useful?
-@[simp] theorem map_snd_keys [inhabited (∀ a, β₁ a)] (p : ∀ a, β₁ a → β₂ a) :
-  (f.map_snd p).keys = f.keys :=
-finset.ext' $ λ _, mem_keys_map_snd_inh p
+@[simp] theorem map_snd_keys (p : ∀ a, β₁ a → β₂ a) : (f.map_snd p).keys = f.keys :=
+finset.val_inj.mp $ by simp
 
 end map_snd
 

@@ -240,27 +240,8 @@ variables {β₁ β₂ : α → Type v} {s : sigma β₁} {m : multiset (sigma �
 def map_snd (f : ∀ a, β₁ a → β₂ a) : multiset (sigma β₁) → multiset (sigma β₂) :=
 map (sigma.map_snd f)
 
-@[simp] theorem mem_keys_map_snd (f : ∀ (a : α), β₁ a → β₂ a) :
-  s.1 ∈ (m.map_snd f).keys ↔ s.1 ∈ m.keys :=
-have h : (s.map_snd f).1 ∈ (m.map_snd f).keys ↔ s.1 ∈ m.keys :=
-mem_keys_map_iff (sigma.map_snd_fst_functional _) (sigma.map_snd_fst_injective _),
-by simpa using h
-
-theorem mem_keys_map_snd_of_mem_keys {a} (f : ∀ (a : α), β₁ a → β₂ a) :
-  a ∈ m.keys → a ∈ (m.map_snd f).keys :=
-λ ma, let ⟨b, mab⟩ := exists_mem_of_mem_keys ma in
-(@mem_keys_map_snd _ _ _ ⟨a, b⟩ _ f).mpr ma
-
--- Is this useful?
-theorem mem_keys_of_mem_keys_map_snd_inh [inhabited (∀ a, β₁ a)] {a}
-  (f : ∀ (a : α), β₁ a → β₂ a) : a ∈ (m.map_snd f).keys → a ∈ m.keys :=
-λ ma, let ⟨b, mab⟩ := exists_mem_of_mem_keys ma in
-(@mem_keys_map_snd _ _ _ ⟨a, default (∀ a, β₁ a) a⟩ _ f).mp ma
-
--- Is this useful?
-@[simp] theorem mem_keys_map_snd_inh [inhabited (∀ a, β₁ a)] {a} (f : ∀ (a : α), β₁ a → β₂ a) :
-  a ∈ (m.map_snd f).keys ↔ a ∈ m.keys :=
-⟨mem_keys_of_mem_keys_map_snd_inh f, mem_keys_map_snd_of_mem_keys f⟩
+@[simp] theorem map_snd_keys (f : ∀ a, β₁ a → β₂ a) : (m.map_snd f).keys = m.keys :=
+by simp [keys, map_snd]
 
 end map_snd
 
