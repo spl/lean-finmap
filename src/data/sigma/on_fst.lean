@@ -73,9 +73,6 @@ theorem map_id_fst_injective (f : ∀ a, β₁ a → β₂ a) :
 def embedding.mk₂ (f : ∀ a, β₁ a → β₂ a) : embedding β₁ β₂ :=
 ⟨_, map_id_fst_injective f⟩
 
-instance : has_coe (∀ a, β₁ a → β₂ a) (embedding β₁ β₂) :=
-⟨embedding.mk₂⟩
-
 end map_id
 
 section
