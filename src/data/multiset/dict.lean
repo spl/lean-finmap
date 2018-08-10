@@ -38,8 +38,8 @@ eq.rec_on e (exists.intro b' m)
 theorem mem_keys {a : α} {m : multiset (sigma β)} : a ∈ m.keys ↔ ∃ (b : β a), sigma.mk a b ∈ m :=
 ⟨exists_mem_of_mem_keys, λ ⟨_, h⟩, mem_keys_of_mem h⟩
 
-theorem nodup_keys_iff {s : multiset (sigma β)} : s.keys.nodup ↔ s.nodup_keys :=
-quotient.induction_on s $ λ _, list.nodup_keys_iff
+theorem nodup_keys_iff {m : multiset (sigma β)} : m.keys.nodup ↔ m.nodup_keys :=
+quotient.induction_on m $ λ _, list.nodup_keys_iff
 
 section kerase
 variables [decidable_eq α]
@@ -49,6 +49,9 @@ quotient.hrec_on m (λ l _, (l.kerase a : multiset (sigma β))) $ λ l₁ l₂ p
   have ⟦l₁⟧ = ⟦l₂⟧ := (coe_eq_coe l₁ l₂).mpr p,
   hfunext (by rw this) $
   λ h₁ h₂ _, heq_of_eq $ quotient.sound $ perm_kerase a h₁ h₂ p
+
+@[simp] theorem kerase_val {l : list (sigma β)} (d : l.nodup_keys) (a : α) : @kerase _ _ _ ⟦l⟧ a d = ⟦l.kerase a⟧ :=
+rfl
 
 theorem kerase_le {m : multiset (sigma β)} (a : α) : ∀ (nd : m.nodup_keys), kerase a nd ≤ m :=
 quotient.induction_on m $ λ l _, subperm_of_sublist (kerase_sublist a l)
@@ -105,6 +108,9 @@ quotient.hrec_on m (λ l _, (l.kinsert s : multiset (sigma β))) $ λ l₁ l₂ 
   have ⟦l₁⟧ = ⟦l₂⟧ := (coe_eq_coe l₁ l₂).mpr p,
   hfunext (by rw this) $
   λ d₁ d₂ _, heq_of_eq $ quotient.sound $ perm_kinsert s d₁ d₂ p
+
+@[simp] theorem kinsert_val {l : list (sigma β)} (d : l.nodup_keys) (s : sigma β) : @kinsert _ _ _ ⟦l⟧ s d = ⟦l.kinsert s⟧ :=
+rfl
 
 @[simp] theorem nodup_keys_kinsert (s : sigma β) :
   ∀ (d : m.nodup_keys), (kinsert s d).nodup_keys :=
@@ -210,8 +216,10 @@ quotient.induction_on m $ λ _ d, (kunion_coe d nodup_keys_zero).trans (by simp)
 
 end kunion
 
+section α₁α₂β₁β₂
+variables {α₁ α₂ : Type u} {β₁ : α₁ → Type v} {β₂ : α₂ → Type v}
+
 section map
-variables {α₁ : Type u} {β₁ : α₁ → Type v} {α₂ : Type u} {β₂ : α₂ → Type v}
 variables {s : sigma β₁} {f : sigma β₁ → sigma β₂} {m m₁ m₂ : multiset (sigma β₁)}
 
 theorem nodup_keys_map (fi : sigma.fst_injective f) : m.nodup_keys → (m.map f).nodup_keys :=
@@ -233,6 +241,22 @@ theorem map_disjoint_keys (ff : sigma.fst_functional f) (fi : sigma.fst_injectiv
 quotient.induction_on₂ m₁ m₂ $ λ _ _, map_disjoint_keys ff fi
 
 end map
+
+section map_decidable_eq_α₁α₂
+variables [decidable_eq α₁] [decidable_eq α₂]
+variables {s : sigma β₁} {f : sigma β₁ → sigma β₂} {m : multiset (sigma β₁)}
+
+@[simp] theorem map_kerase (ff : sigma.fst_functional f) (fi : sigma.fst_injective f) :
+  ∀ (d : m.nodup_keys), (kerase s.1 d).map f = kerase (f s).1 (nodup_keys_map fi d) :=
+quotient.induction_on m $ λ _ _, by simp [ff, fi]
+
+@[simp] theorem map_kinsert (ff : sigma.fst_functional f) (fi : sigma.fst_injective f) :
+  ∀ (d : m.nodup_keys), (kinsert s d).map f = kinsert (f s) (nodup_keys_map fi d) :=
+quotient.induction_on m $ λ _ _, by simp [ff, fi]
+
+end map_decidable_eq_α₁α₂
+
+end α₁α₂β₁β₂
 
 section map_id
 variables {β₁ β₂ : α → Type v} {s : sigma β₁} {m : multiset (sigma β₁)}

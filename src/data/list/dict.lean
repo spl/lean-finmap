@@ -867,6 +867,23 @@ end
 section
 variables {α₁ α₂ : Type u} {β₁ : α₁ → Type v} {β₂ : α₂ → Type v}
 
+@[simp] theorem map_kerase [decidable_eq α₁] [decidable_eq α₂] {s : sigma β₁}
+  {l : list (sigma β₁)} {f : sigma β₁ → sigma β₂} (ff : sigma.fst_functional f) (fi : sigma.fst_injective f) :
+  (l.kerase s.1).map f = (l.map f).kerase (f s).1 :=
+begin
+  induction l,
+  case list.nil { simp },
+  case list.cons : hd tl ih {
+    by_cases h : (f hd).1 = (f s).1,
+    { simp [h, fi h] },
+    { simp [h, mt (@ff _ _) h, ih] } }
+end
+
+@[simp] theorem map_kinsert [decidable_eq α₁] [decidable_eq α₂] {s : sigma β₁}
+  {l : list (sigma β₁)} {f : sigma β₁ → sigma β₂} (ff : sigma.fst_functional f) (fi : sigma.fst_injective f) :
+  (l.kinsert s).map f = (l.map f).kinsert (f s) :=
+by simp [ff, fi]
+
 theorem map_disjoint_keys_of_disjoint_keys {l₁ l₂ : list (sigma β₁)}
   {f : sigma β₁ → sigma β₂} (fi : sigma.fst_injective f)
   (dk : disjoint l₁.keys l₂.keys) : disjoint (l₁.map f).keys (l₂.map f).keys :=

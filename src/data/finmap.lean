@@ -306,6 +306,10 @@ variables {a : α} {s : sigma β} {f : finmap α β}
 instance : has_insert (sigma β) (finmap α β) :=
 ⟨λ s f, ⟨kinsert s f.nodup_keys, nodup_keys_kinsert s f.nodup_keys⟩⟩
 
+theorem insert_def (s : sigma β) (f : finmap α β) :
+  insert s f = mk (kinsert s f.nodup_keys) (nodup_keys_kinsert s f.nodup_keys) :=
+rfl
+
 @[simp] theorem insert_val (s : sigma β) (f : finmap α β) :
   (insert s f).val = kinsert s f.nodup_keys :=
 rfl
@@ -390,6 +394,10 @@ def map (p : β₁ s↪ β₂) (f : finmap α₁ β₁) : finmap α₂ β₂ :=
 @[simp] theorem map_val (p : β₁ s↪ β₂) (f : finmap α₁ β₁) : (f.map p).val = f.val.map p :=
 rfl
 
+@[simp] theorem map_mk {m₁ : multiset (sigma β₁)} {m₂ : multiset (sigma β₂)} {p : β₁ s↪ β₂}
+  (d₁ : m₁.nodup_keys) (d₂ : m₂.nodup_keys) : (mk m₁ d₁).map p = mk m₂ d₂ ↔ m₁.map p = m₂ :=
+by simp [map]
+
 @[simp] theorem map_empty (p : β₁ s↪ β₂) : map p ∅ = ∅ :=
 rfl
 
@@ -426,6 +434,19 @@ by simp only [finset.disjoint_val]; exact multiset.map_disjoint_keys pf p.fst_in
 theorem map_union [decidable_eq α₁] [decidable_eq α₂] (pf : sigma.fst_functional p)
   (dk : disjoint f.keys g.keys) : (f ∪ g).map p = f.map p ∪ g.map p :=
 ext' $ by simp [dk, map_disjoint_keys pf, or_and_distrib_right, exists_or_distrib]
+
+section decidable_eq_α₁α₂
+variables [decidable_eq α₁] [decidable_eq α₂]
+
+@[simp] theorem map_erase (pf : sigma.fst_functional p) :
+  (f.erase s₁.1).map p = (f.map p).erase (p s₁).1 :=
+by simp [erase, map_kerase pf p.fst_inj f.nodup_keys]
+
+@[simp] theorem map_insert (pf : sigma.fst_functional p) :
+  (insert s₁ f).map p = insert (p s₁) (f.map p) :=
+by simp [insert_def, map_kinsert pf p.fst_inj f.nodup_keys]
+
+end decidable_eq_α₁α₂
 
 end map
 
