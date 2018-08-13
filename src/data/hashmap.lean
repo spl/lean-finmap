@@ -5,7 +5,7 @@ universes u v
 /-- A hash map with an `n`-sized array of association list buckets, a hash
 function, and a proof that every bucket is correctly hashed. -/
 structure hashmap {α : Type u} (β : α → Type v) :=
-/- Number of buckets (positive) -/
+/- Number of buckets: There must be at least one. -/
 (n : ℕ+)
 /- Hash function -/
 (hash : α → fin n.val)
