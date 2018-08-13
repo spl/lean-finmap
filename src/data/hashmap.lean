@@ -4,7 +4,7 @@ universes u v
 
 /-- A hash map with an `n`-sized array of association list buckets, a hash
 function, and a proof that every bucket is correctly hashed. -/
-structure hashmap {α : Type u} (β : α → Type v) [decidable_eq α] :=
+structure hashmap {α : Type u} (β : α → Type v) :=
 /- Number of buckets (positive) -/
 (n : ℕ+)
 /- Hash function -/
@@ -20,7 +20,7 @@ structure hashmap {α : Type u} (β : α → Type v) [decidable_eq α] :=
 def hashmap.default_n : ℕ+ :=
 8
 
-variables {α : Type u} {β : α → Type v} [decidable_eq α]
+variables {α : Type u} {β : α → Type v}
 
 /-- Construct an empty hashmap with a given number of buckets (or the default)
 and a hash function -/
@@ -40,10 +40,10 @@ mk_hashmap n (hashmap.mk_mod_hash n f)
 namespace hashmap
 open list
 
-def lookup (a : α) (m : hashmap β) : option (β a) :=
+def lookup [decidable_eq α] (a : α) (m : hashmap β) : option (β a) :=
 klookup a $ m.buckets.read $ m.hash a
 
-instance : has_mem α (hashmap β) :=
+instance [decidable_eq α] : has_mem α (hashmap β) :=
 ⟨λ a m, (m.lookup a).is_some⟩
 
 def foldl {γ : Type*} (m : hashmap β) (f : γ → sigma β → γ) (d : γ) : γ :=
@@ -55,7 +55,7 @@ m.buckets.to_list.join
 def keys (m : hashmap β) : list α :=
 m.to_list.keys
 
-def erase (m : hashmap β) (a : α) : hashmap β :=
+def erase [decidable_eq α] (m : hashmap β) (a : α) : hashmap β :=
 { n := m.n,
   hash := m.hash,
   buckets := m.buckets.modify (m.hash a) (kerase a),
@@ -65,7 +65,7 @@ def erase (m : hashmap β) (a : α) : hashmap β :=
     by by_cases e : m.hash a = i; simp [e] at h;
        [exact mem_of_mem_kerase h, exact h] }
 
-def insert (s : sigma β) (m : hashmap β) : hashmap β :=
+def insert [decidable_eq α] (s : sigma β) (m : hashmap β) : hashmap β :=
 { n := m.n,
   hash := m.hash,
   buckets := m.buckets.modify (m.hash s.1) (kinsert s),
