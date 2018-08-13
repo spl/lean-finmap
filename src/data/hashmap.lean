@@ -5,40 +5,47 @@ universes u v
 /-- A hash map with an `n`-sized array of association list buckets, a hash
 function, and a proof that every bucket is correctly hashed. -/
 structure hashmap {α : Type u} (β : α → Type v) :=
-/- Number of buckets: There must be at least one. -/
-(n : ℕ+)
+/- Number of buckets -/
+(n : ℕ)
 /- Hash function -/
-(hash : α → fin n.val)
+(hash : α → fin n)
 /- Array of association list buckets -/
-(buckets : array n.val (list (sigma β)))
+(buckets : array n (list (sigma β)))
 /- Each bucket has no duplicate keys. -/
-(nodup_keys : ∀ (i : fin n.val), (buckets.read i).nodup_keys)
+(nodup_keys : ∀ (i : fin n), (buckets.read i).nodup_keys)
 /- Each member of a bucket has a key hash equal to the index of that bucket. -/
-(hash_idx : ∀ {i : fin n.val} {s : sigma β}, s ∈ buckets.read i → hash s.1 = i)
+(hash_idx : ∀ {i : fin n} {s : sigma β}, s ∈ buckets.read i → hash s.1 = i)
 
 /-- Default number of buckets (8) -/
-def hashmap.default_n : ℕ+ :=
+def hashmap.default_n : ℕ :=
 8
 
 variables {α : Type u} {β : α → Type v}
 
 /-- Construct an empty hashmap with a given number of buckets (or the default)
 and a hash function -/
-def mk_hashmap (n : ℕ+ := hashmap.default_n) (f : α → fin n.val) : hashmap β :=
-⟨n, f, mk_array n.val [], λ i, list.nodup_keys_nil, λ _ _ h, by cases h⟩
+def mk_hashmap (n : ℕ := hashmap.default_n) (f : α → fin n) : hashmap β :=
+⟨n, f, mk_array n [], λ i, list.nodup_keys_nil, λ _ _ h, by cases h⟩
+
+/-- Default number of buckets (8) -/
+def hashmap.default_pn : ℕ+ :=
+⟨hashmap.default_n, dec_trivial⟩
 
 /-- Create a hash function from a function `f : α → ℕ` using the result modulo
 the number of buckets -/
-def hashmap.mk_mod_hash (n : ℕ+ := hashmap.default_n) (f : α → ℕ) (a : α) : fin n.val :=
+def hashmap.mk_mod_hash (n : ℕ+ := hashmap.default_pn) (f : α → ℕ) (a : α) : fin n.val :=
 ⟨f a % n.val, nat.mod_lt _ n.property⟩
 
 /-- Construct an empty hashmap with a given number of buckets (or the default)
 and a modulo hash function -/
-def mk_mod_hashmap (n : ℕ+ := hashmap.default_n) (f : α → ℕ) : hashmap β :=
+def mk_mod_hashmap (n : ℕ+ := hashmap.default_pn) (f : α → ℕ) : hashmap β :=
 mk_hashmap n (hashmap.mk_mod_hash n f)
 
 namespace hashmap
 open list
+
+def empty (m : hashmap β) : Prop :=
+m.n = 0 ∨ ∀ i, m.buckets.read i = []
 
 def lookup [decidable_eq α] (a : α) (m : hashmap β) : option (β a) :=
 klookup a $ m.buckets.read $ m.hash a
