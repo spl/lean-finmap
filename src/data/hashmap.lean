@@ -56,19 +56,16 @@ def keys (m : hashmap β) : list α :=
 m.to_list.keys
 
 def erase [decidable_eq α] (m : hashmap β) (a : α) : hashmap β :=
-{ n := m.n,
-  hash := m.hash,
-  buckets := m.buckets.modify (m.hash a) (kerase a),
+{ buckets := m.buckets.modify (m.hash a) (kerase a),
   nodup_keys := λ i,
     by by_cases e : m.hash a = i; simp [e, m.nodup_keys i],
   hash_idx := λ i s h, m.hash_idx $
     by by_cases e : m.hash a = i; simp [e] at h;
-       [exact mem_of_mem_kerase h, exact h] }
+       [exact mem_of_mem_kerase h, exact h],
+  ..m }
 
 def insert [decidable_eq α] (s : sigma β) (m : hashmap β) : hashmap β :=
-{ n := m.n,
-  hash := m.hash,
-  buckets := m.buckets.modify (m.hash s.1) (kinsert s),
+{ buckets := m.buckets.modify (m.hash s.1) (kinsert s),
   nodup_keys := λ i,
     by by_cases e : m.hash s.1 = i; simp [e, m.nodup_keys i],
   hash_idx := λ i s' h,
@@ -78,6 +75,7 @@ def insert [decidable_eq α] (s : sigma β) (m : hashmap β) : hashmap β :=
       { induction h, exact e },
       { exact m.hash_idx (mem_of_mem_kerase h) } },
     { exact m.hash_idx h }
-  end }
+  end,
+  ..m }
 
 end hashmap
