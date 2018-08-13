@@ -11,6 +11,9 @@ open function list
 def nodup_keys (m : multiset (sigma β)) : Prop :=
 quotient.lift_on m nodup_keys (λ _ _, propext ∘ perm_nodup_keys)
 
+theorem nodup_keys_val (l : list (sigma β)) : nodup_keys ⟦l⟧ ↔ l.nodup_keys :=
+iff.rfl
+
 theorem nodup_of_nodup_keys {m : multiset (sigma β)} : m.nodup_keys → m.nodup :=
 quotient.induction_on m $ λ _, nodup_of_nodup_keys
 
@@ -53,7 +56,7 @@ rfl
 def keys : multiset (sigma β) → multiset α :=
 map sigma.fst
 
-@[simp] theorem keys_coe (l : list (sigma β)) :
+@[simp] theorem keys_val (l : list (sigma β)) :
   keys (l : multiset (sigma β)) = (l.keys : multiset α) :=
 rfl
 
