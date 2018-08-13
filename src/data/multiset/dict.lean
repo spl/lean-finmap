@@ -11,7 +11,8 @@ open function list
 def nodup_keys (m : multiset (sigma β)) : Prop :=
 quotient.lift_on m nodup_keys (λ _ _, propext ∘ perm_nodup_keys)
 
-theorem nodup_keys_val (l : list (sigma β)) : nodup_keys ⟦l⟧ ↔ l.nodup_keys :=
+theorem nodup_keys_coe {l : list (sigma β)} :
+  nodup_keys (l : multiset (sigma β)) ↔ l.nodup_keys :=
 iff.rfl
 
 theorem nodup_of_nodup_keys {m : multiset (sigma β)} : m.nodup_keys → m.nodup :=
@@ -31,10 +32,10 @@ def krec_on {γ : Sort*} (m : multiset (sigma β))
   λ _ _ p, hfunext (by rw perm_nodup_keys p) $
     λ d₁ d₂ _, heq_of_eq $ c p d₁ d₂
 
-@[simp] theorem krec_on_val {γ : Sort*} {l : list (sigma β)} (d : l.nodup_keys)
+@[simp] theorem krec_on_coe {γ : Sort*} {l : list (sigma β)} (d : l.nodup_keys)
   (φ : ∀ {l : list (sigma β)}, l.nodup_keys → γ)
   (c : ∀ {l₁ l₂} (p : l₁ ~ l₂) (d₁ : l₁.nodup_keys) (d₂ : l₂.nodup_keys), φ d₁ = φ d₂) :
-  krec_on ⟦l⟧ @φ @c d = φ d :=
+  krec_on (l : multiset (sigma β)) @φ @c d = φ d :=
 rfl
 
 def krec_on₂ {γ : Sort*} (m₁ m₂ : multiset (sigma β))
@@ -46,17 +47,17 @@ krec_on m₁
   (λ l d, krec_on m₂ (λ l₂ d₂, φ d d₂) (λ l₁ l₂ p d₁ d₂, cr p d d₁ d₂))
   (λ l₁ l₂ p d₁ d₂, by congr; funext l; funext d; exact cl p d d₁ d₂)
 
-@[simp] theorem krec_on₂_val {γ : Sort*} {l₁ l₂ : list (sigma β)} (d₁ : l₁.nodup_keys) (d₂ : l₂.nodup_keys)
+@[simp] theorem krec_on₂_coe {γ : Sort*} {l₁ l₂ : list (sigma β)} (d₁ : l₁.nodup_keys) (d₂ : l₂.nodup_keys)
   (φ : ∀ {l₁ l₂ : list (sigma β)}, l₁.nodup_keys → l₂.nodup_keys → γ)
   (cl : ∀ {l l₁ l₂ : list (sigma β)} (p : l₁ ~ l₂) (d : l.nodup_keys) (d₁ : l₁.nodup_keys) (d₂ : l₂.nodup_keys), φ d₁ d = φ d₂ d)
   (cr : ∀ {l l₁ l₂ : list (sigma β)} (p : l₁ ~ l₂) (d : l.nodup_keys) (d₁ : l₁.nodup_keys) (d₂ : l₂.nodup_keys), φ d d₁ = φ d d₂) :
-  krec_on₂ ⟦l₁⟧ ⟦l₂⟧ @φ @cl @cr d₁ d₂ = φ d₁ d₂ :=
+  krec_on₂ (l₁ : multiset (sigma β)) (l₂ : multiset (sigma β)) @φ @cl @cr d₁ d₂ = φ d₁ d₂ :=
 rfl
 
 def keys : multiset (sigma β) → multiset α :=
 map sigma.fst
 
-@[simp] theorem keys_val (l : list (sigma β)) :
+@[simp] theorem keys_coe (l : list (sigma β)) :
   keys (l : multiset (sigma β)) = (l.keys : multiset α) :=
 rfl
 
@@ -81,7 +82,8 @@ def kerase {m : multiset (sigma β)} (a : α) : m.nodup_keys → multiset (sigma
 krec_on m (λ l _, (l.kerase a : multiset (sigma β))) $ λ _ _ p d₁ d₂,
   quotient.sound $ perm_kerase a d₁ d₂ p
 
-@[simp] theorem kerase_val {l : list (sigma β)} (d : l.nodup_keys) (a : α) : @kerase _ _ _ ⟦l⟧ a d = ⟦l.kerase a⟧ :=
+@[simp] theorem kerase_coe {l : list (sigma β)} (d : l.nodup_keys) (a : α) :
+  @kerase _ _ _ (l : multiset (sigma β)) a d = (l.kerase a : multiset (sigma β)) :=
 rfl
 
 theorem kerase_le {m : multiset (sigma β)} (a : α) : ∀ (nd : m.nodup_keys), kerase a nd ≤ m :=
@@ -138,7 +140,8 @@ def kinsert (s : sigma β) : m.nodup_keys → multiset (sigma β) :=
 krec_on m (λ l _, (l.kinsert s : multiset (sigma β))) $ λ _ _ p d₁ d₂,
   quotient.sound $ perm_kinsert s d₁ d₂ p
 
-@[simp] theorem kinsert_val {l : list (sigma β)} (d : l.nodup_keys) (s : sigma β) : @kinsert _ _ _ ⟦l⟧ s d = ⟦l.kinsert s⟧ :=
+@[simp] theorem kinsert_coe {l : list (sigma β)} (d : l.nodup_keys) (s : sigma β) :
+  @kinsert _ _ _ (l : multiset (sigma β)) s d = (l.kinsert s : multiset (sigma β)) :=
 rfl
 
 @[simp] theorem nodup_keys_kinsert (s : sigma β) :
@@ -197,7 +200,7 @@ krec_on₂ m₁ m₂ (λ l₁ l₂ d₁ d₂, (l₁.kunion l₂ : multiset (sigm
 
 local infixr ` k∪ `:67 := kunion
 
-@[simp] theorem kunion_val
+@[simp] theorem kunion_coe
    (d₁ : (l₁ : multiset (sigma β)).nodup_keys) (d₂ : (l₂ : multiset (sigma β)).nodup_keys) :
    d₁ k∪ d₂ = (l₁.kunion l₂ : multiset (sigma β)) :=
 rfl
@@ -206,7 +209,7 @@ rfl
 quotient.induction_on m $ λ _ _, rfl
 
 @[simp] theorem kunion_zero : ∀ (d : m.nodup_keys), d k∪ nodup_keys_zero = m :=
-quotient.induction_on m $ λ _ _, by simp [kunion_val]
+quotient.induction_on m $ λ _ _, by simp [kunion_coe]
 
 @[simp] theorem mem_kunion : ∀ (d₁ : m₁.nodup_keys) (d₂ : m₂.nodup_keys),
   disjoint m₁.keys m₂.keys → (s ∈ d₁ k∪ d₂ ↔ s ∈ m₁ ∨ s ∈ m₂) :=
