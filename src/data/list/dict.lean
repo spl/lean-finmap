@@ -3,14 +3,6 @@ import data.sigma.on_fst
 
 universes u v
 
-namespace option
-variables {α : Type*} {o : option α}
-
-@[simp] theorem is_some_eq_ff : is_some o = ff ↔ o = none :=
-by cases o; simp [is_some]
-
-end option
-
 local attribute [simp] not_or_distrib and.assoc
 local attribute [-simp] sigma.forall
 
