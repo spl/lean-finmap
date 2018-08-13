@@ -507,7 +507,8 @@ by by_cases h : s.1 = a; [simp [h], simp [h, ne.symm h]]
 
 @[simp] theorem nodup_keys_kinsert (s : sigma β) (nd : l.nodup_keys) :
   (l.kinsert s).nodup_keys :=
-(nodup_keys_cons_of_not_mem_keys (not_mem_keys_kerase_self nd)).mpr $ nodup_keys_kerase _ nd
+(nodup_keys_cons_of_not_mem_keys (not_mem_keys_kerase_self nd)).mpr $
+  nodup_keys_kerase _ nd
 
 theorem perm_kinsert (nd₁ : l₁.nodup_keys) (nd₂ : l₂.nodup_keys) (p : l₁ ~ l₂) :
   l₁.kinsert s ~ l₂.kinsert s :=
