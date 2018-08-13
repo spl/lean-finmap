@@ -80,7 +80,7 @@ variables [decidable_eq α]
 
 def kerase {m : multiset (sigma β)} (a : α) : m.nodup_keys → multiset (sigma β) :=
 krec_on m (λ l _, (l.kerase a : multiset (sigma β))) $ λ _ _ p d₁ d₂,
-  quotient.sound $ perm_kerase a d₁ d₂ p
+  quotient.sound $ perm_kerase d₁ d₂ p
 
 @[simp] theorem kerase_coe {l : list (sigma β)} (d : l.nodup_keys) (a : α) :
   @kerase _ _ _ (l : multiset (sigma β)) a d = (l.kerase a : multiset (sigma β)) :=
@@ -123,22 +123,12 @@ le_induction_on h $ λ _ _ ih _ _, subperm_of_sublist $ kerase_sublist_kerase a 
 
 end kerase
 
-section kerase_all
-variables [decidable_eq α]
-
-def kerase_all (m : multiset (sigma β)) (a : α) : multiset (sigma β) :=
-quotient.lift_on m
-  (λ l, (l.kerase_all a : multiset (sigma β)))
-  (λ _ _, quotient.sound ∘ perm_kerase_all a)
-
-end kerase_all
-
 section kinsert
 variables [decidable_eq α] {m : multiset (sigma β)}
 
 def kinsert (s : sigma β) : m.nodup_keys → multiset (sigma β) :=
 krec_on m (λ l _, (l.kinsert s : multiset (sigma β))) $ λ _ _ p d₁ d₂,
-  quotient.sound $ perm_kinsert s d₁ d₂ p
+  quotient.sound $ perm_kinsert d₁ d₂ p
 
 @[simp] theorem kinsert_coe {l : list (sigma β)} (d : l.nodup_keys) (s : sigma β) :
   @kinsert _ _ _ (l : multiset (sigma β)) s d = (l.kinsert s : multiset (sigma β)) :=
@@ -163,7 +153,7 @@ section klookup
 variables [decidable_eq α] {m : multiset (sigma β)}
 
 def klookup (a : α) : m.nodup_keys → option (β a) :=
-krec_on m (λ l _, l.klookup a) $ λ _ _ p d₁ d₂, perm_klookup a d₁ d₂ p
+krec_on m (λ l _, l.klookup a) $ λ _ _ p d₁ d₂, perm_klookup d₁ d₂ p
 
 end klookup
 
@@ -173,7 +163,7 @@ variables [decidable_eq α]
 def klookup_all (a : α) (m : multiset (sigma β)) : multiset (β a) :=
 quotient.lift_on m
   (λ l, (l.klookup_all a : multiset (β a)))
-  (λ _ _, quotient.sound ∘ perm_klookup_all a)
+  (λ _ _, quotient.sound ∘ perm_klookup_all)
 
 end klookup_all
 
@@ -182,7 +172,7 @@ variables [decidable_eq α] {m : multiset (sigma β)}
 
 def kreplace (s : sigma β) : m.nodup_keys → multiset (sigma β) :=
 krec_on m (λ l _, (l.kreplace s : multiset (sigma β))) $ λ _ _ p d₁ d₂,
-  quotient.sound $ perm_kreplace s d₁ d₂ p
+  quotient.sound $ perm_kreplace d₁ d₂ p
 
 @[simp] theorem nodup_keys_kreplace (s : sigma β) :
   ∀ (d : m.nodup_keys), (kreplace s d).nodup_keys :=
