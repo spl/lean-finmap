@@ -87,6 +87,18 @@ begin
     simp [perm_nodup_keys (perm.swap hd₁ hd tl), ne.symm h.1, ih h.2] }
 end
 
+theorem nodup_keys_join {ls : list (list (sigma β))} :
+  (join ls).nodup_keys ↔
+  (∀ {l : list (sigma β)}, l ∈ ls → l.nodup_keys) ∧
+   pairwise (λ (l₁ l₂ : list (sigma β)), disjoint l₁.keys l₂.keys) ls :=
+pairwise_join.trans $ and_congr iff.rfl $ pairwise.iff $ λ s t,
+  have h₁ : (∀ (x : sigma β), x ∈ s → x.1 ∉ t.keys) → disjoint s.keys t.keys :=
+    λ f a mkas mkat, let ⟨b, mabs⟩ := exists_mem_of_mem_keys mkas in
+    absurd mkat $ f ⟨a, b⟩ mabs,
+  have h₂ : disjoint s.keys t.keys → ∀ (x : sigma β), x ∈ s → x.1 ∉ t.keys :=
+    λ dj x mxs mkat, absurd mkat $ dj $ mem_keys_of_mem mxs,
+  ⟨by simpa using h₁, by simpa using h₂⟩
+
 theorem perm_keys_of_perm (nd₁ : l₁.nodup_keys) (nd₂ : l₂.nodup_keys) (p : l₁ ~ l₂) :
   l₁.keys ~ l₂.keys :=
 begin
