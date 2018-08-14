@@ -20,16 +20,16 @@ structure hashmap {α : Type u} (β : α → Type v) :=
 def hashmap.default_n : ℕ :=
 8
 
+/-- Default positive number of buckets (default_n) -/
+def hashmap.default_pn : ℕ+ :=
+⟨hashmap.default_n, dec_trivial⟩
+
 variables {α : Type u} {β : α → Type v}
 
 /-- Construct an empty hashmap with a given number of buckets (or the default)
 and a hash function -/
-def mk_hashmap (n : ℕ := hashmap.default_n) (f : α → fin n) : hashmap β :=
+def mk_hashmap (β) (n : ℕ := hashmap.default_n) (f : α → fin n) : hashmap β :=
 ⟨n, f, mk_array n [], λ i, list.nodup_keys_nil, λ _ _ h, by cases h⟩
-
-/-- Default number of buckets (8) -/
-def hashmap.default_pn : ℕ+ :=
-⟨hashmap.default_n, dec_trivial⟩
 
 /-- Create a hash function from a function `f : α → ℕ` using the result modulo
 the number of buckets -/
@@ -38,14 +38,23 @@ def hashmap.mk_mod_hash (n : ℕ+ := hashmap.default_pn) (f : α → ℕ) (a : �
 
 /-- Construct an empty hashmap with a given number of buckets (or the default)
 and a modulo hash function -/
-def mk_mod_hashmap (n : ℕ+ := hashmap.default_pn) (f : α → ℕ) : hashmap β :=
-mk_hashmap n (hashmap.mk_mod_hash n f)
+def mk_mod_hashmap (β) (n : ℕ+ := hashmap.default_pn) (f : α → ℕ) : hashmap β :=
+mk_hashmap β n (hashmap.mk_mod_hash n f)
 
 namespace hashmap
 open list
 
 def empty (m : hashmap β) : Prop :=
-m.n = 0 ∨ ∀ i, m.buckets.read i = []
+∀ (i : fin m.n), m.buckets.read i = []
+
+theorem empty_mk (β) (n : ℕ) (f : α → fin n) : empty (mk_hashmap β n f) :=
+λ _, rfl
+
+theorem empty_mk_mod (β) (n : ℕ+) (f : α → ℕ) : empty (mk_mod_hashmap β n f) :=
+λ _, rfl
+
+theorem empty_zero (m : hashmap β) (h : m.n = 0) : empty m :=
+λ i, by cases (h.rec_on i : fin 0).is_lt
 
 def lookup [decidable_eq α] (a : α) (m : hashmap β) : option (β a) :=
 klookup a $ m.buckets.read $ m.hash a
