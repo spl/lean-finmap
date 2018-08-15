@@ -12,7 +12,7 @@ structure hashmap {α : Type u} (β : α → Type v) :=
 /- Array of association list buckets -/
 (buckets : array n (list (sigma β)))
 /- Each bucket has no duplicate keys. -/
-(nodup_keys : ∀ (i : fin n), (buckets.read i).nodup_keys)
+(nodupkeys : ∀ (i : fin n), (buckets.read i).nodupkeys)
 /- Each member of a bucket has a key hash equal to the index of that bucket. -/
 (hash_idx : ∀ {i : fin n} {s : sigma β}, s ∈ buckets.read i → hash s.1 = i)
 
@@ -29,7 +29,7 @@ variables {α : Type u} {β : α → Type v}
 /-- Construct an empty hashmap with a given number of buckets (or the default)
 and a hash function -/
 def mk_hashmap (β) (n : ℕ := hashmap.default_n) (f : α → fin n) : hashmap β :=
-⟨n, f, mk_array n [], λ i, list.nodup_keys_nil, λ _ _ h, by cases h⟩
+⟨n, f, mk_array n [], λ i, list.nodupkeys_nil, λ _ _ h, by cases h⟩
 
 /-- Create a hash function from a function `f : α → ℕ` using the result modulo
 the number of buckets -/
@@ -70,8 +70,8 @@ variables {m : hashmap β} {i : ℕ} {l : list (sigma β)}
 -- TODO
 -- theorem empty_to_list : empty m ↔ m.to_list = [] :=
 
-theorem nodup_keys_of_mem_buckets (h : l ∈ m.buckets) : l.nodup_keys :=
-let ⟨i, e⟩ := h in e ▸ m.nodup_keys i
+theorem nodupkeys_of_mem_buckets (h : l ∈ m.buckets) : l.nodupkeys :=
+let ⟨i, e⟩ := h in e ▸ m.nodupkeys i
 
 theorem hash_idx_of_enum (he : (i, l) ∈ m.buckets.to_list.enum)
   {s : sigma β} (hl : s ∈ l) : (m.hash s.1).1 = i :=
@@ -95,9 +95,9 @@ begin
   rw [←hash_idx_of_enum me₁ mab₁, ←hash_idx_of_enum me₂ mab₂]
 end
 
-theorem nodup_keys_to_list (m : hashmap β) : m.to_list.nodup_keys :=
-nodup_keys_join.mpr $ and.intro
-  (λ l ml, by simp at ml; cases ml with i e; induction e; exact m.nodup_keys i)
+theorem nodupkeys_to_list (m : hashmap β) : m.to_list.nodupkeys :=
+nodupkeys_join.mpr $ and.intro
+  (λ l ml, by simp at ml; cases ml with i e; induction e; exact m.nodupkeys i)
   m.disjoint_bucket_keys
 
 end to_list
@@ -112,7 +112,7 @@ section keys
 variables {m : hashmap β}
 
 theorem keys_nodup (m : hashmap β) : m.keys.nodup :=
-nodup_keys_iff.mpr m.nodup_keys_to_list
+nodupkeys_iff.mpr m.nodupkeys_to_list
 
 end keys
 
@@ -157,8 +157,8 @@ end mem
 
 def erase (m : hashmap β) (a : α) : hashmap β :=
 { buckets := m.buckets.modify (m.hash a) (kerase a),
-  nodup_keys := λ i,
-    by by_cases e : m.hash a = i; simp [e, m.nodup_keys i],
+  nodupkeys := λ i,
+    by by_cases e : m.hash a = i; simp [e, m.nodupkeys i],
   hash_idx := λ i s h, m.hash_idx $
     by by_cases e : m.hash a = i; simp [e] at h;
        [exact mem_of_mem_kerase h, exact h],
@@ -166,8 +166,8 @@ def erase (m : hashmap β) (a : α) : hashmap β :=
 
 def insert (s : sigma β) (m : hashmap β) : hashmap β :=
 { buckets := m.buckets.modify (m.hash s.1) (kinsert s),
-  nodup_keys := λ i,
-    by by_cases e : m.hash s.1 = i; simp [e, m.nodup_keys i],
+  nodupkeys := λ i,
+    by by_cases e : m.hash s.1 = i; simp [e, m.nodupkeys i],
   hash_idx := λ i s' h,
   begin
     by_cases e : m.hash s.1 = i; simp [e] at h,

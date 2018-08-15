@@ -7,7 +7,7 @@ universes u v
 /-- Finite map: a multiset of dependent pairs with no duplicate keys -/
 structure finmap (α : Type u) (β : α → Type v) : Type (max u v) :=
 (val : multiset (sigma β))
-(nodup_keys : val.nodup_keys)
+(nodupkeys : val.nodupkeys)
 
 namespace finmap
 open multiset
@@ -29,36 +29,36 @@ open function
 
 /-- Dependent recursor on a finmap for a list -/
 protected def lrec_on {γ : Sort*} (f : finmap α β)
-  (φ : ∀ {l : list (sigma β)}, l.nodup_keys → γ)
+  (φ : ∀ {l : list (sigma β)}, l.nodupkeys → γ)
   (c : ∀ {l₁ l₂} (p : l₁ ~ l₂) d₁ d₂, φ d₁ = φ d₂) : γ :=
-@quotient.hrec_on _ _ (λ (m : multiset (sigma β)), m.nodup_keys → γ)
+@quotient.hrec_on _ _ (λ (m : multiset (sigma β)), m.nodupkeys → γ)
   f.val
-  (λ l (d : l.nodup_keys), φ d)
-  (λ l₁ l₂ p, hfunext (by rw list.perm_nodup_keys p) $ λ d₁ d₂ _, heq_of_eq $ c p d₁ d₂)
-  f.nodup_keys
+  (λ l (d : l.nodupkeys), φ d)
+  (λ l₁ l₂ p, hfunext (by rw list.perm_nodupkeys p) $ λ d₁ d₂ _, heq_of_eq $ c p d₁ d₂)
+  f.nodupkeys
 
 /-- Dependent recursor on two finmaps for lists -/
 protected def lrec_on₂ {γ : Sort*} (f g : finmap α β)
-  (φ : ∀ {l₁ l₂ : list (sigma β)}, l₁.nodup_keys → l₂.nodup_keys → γ)
+  (φ : ∀ {l₁ l₂ : list (sigma β)}, l₁.nodupkeys → l₂.nodupkeys → γ)
   (c : ∀ {l₁ l₂ l₃ l₄} (p₁₃ : l₁ ~ l₃) (p₂₄ : l₂ ~ l₄) d₁ d₂ d₃ d₄, φ d₁ d₂ = φ d₃ d₄) : γ :=
 @quotient.hrec_on₂ _ _ _ _
-  (λ (m₁ m₂ : multiset (sigma β)), m₁.nodup_keys → m₂.nodup_keys → γ)
+  (λ (m₁ m₂ : multiset (sigma β)), m₁.nodupkeys → m₂.nodupkeys → γ)
   f.val g.val
-  (λ l₁ l₂ (d₁ : l₁.nodup_keys) (d₂ : l₂.nodup_keys), φ d₁ d₂)
-  (λ l₁ l₂ l₃ l₄ p₁₃ p₂₄, hfunext (by rw list.perm_nodup_keys p₁₃) $
-    λ d₁ d₃ _, hfunext (by rw list.perm_nodup_keys p₂₄) $
+  (λ l₁ l₂ (d₁ : l₁.nodupkeys) (d₂ : l₂.nodupkeys), φ d₁ d₂)
+  (λ l₁ l₂ l₃ l₄ p₁₃ p₂₄, hfunext (by rw list.perm_nodupkeys p₁₃) $
+    λ d₁ d₃ _, hfunext (by rw list.perm_nodupkeys p₂₄) $
       λ d₂ d₄ _, heq_of_eq $ c p₁₃ p₂₄ d₁ d₂ d₃ d₄)
-  f.nodup_keys g.nodup_keys
+  f.nodupkeys g.nodupkeys
 
 /-- Lift a function on 2 lists to a function on 2 finmaps  -/
 protected def lift_on₂ {γ : Type*} (f g : finmap α β)
-  (φ : ∀ {l₁ l₂ : list (sigma β)}, l₁.nodup_keys → l₂.nodup_keys → γ)
+  (φ : ∀ {l₁ l₂ : list (sigma β)}, l₁.nodupkeys → l₂.nodupkeys → γ)
   (c : ∀ {l₁ l₂ l₃ l₄} (p₁₃ : l₁ ~ l₃) (p₂₄ : l₂ ~ l₄) d₁ d₂ d₃ d₄, φ d₁ d₂ = φ d₃ d₄) :
   roption γ :=
 quotient.lift_on₂ f.val g.val
-  (λ l₁ l₂, roption.mk (l₁.nodup_keys ∧ l₂.nodup_keys) (λ ⟨d₁, d₂⟩, φ d₁ d₂))
+  (λ l₁ l₂, roption.mk (l₁.nodupkeys ∧ l₂.nodupkeys) (λ ⟨d₁, d₂⟩, φ d₁ d₂))
   (λ l₁ l₂ l₃ l₄ p₁₃ p₂₄, roption.ext'
-    (and_congr (list.perm_nodup_keys p₁₃) (list.perm_nodup_keys p₂₄))
+    (and_congr (list.perm_nodupkeys p₁₃) (list.perm_nodupkeys p₂₄))
     (λ ⟨d₁, d₂⟩ ⟨d₃, d₄⟩, c p₁₃ p₂₄ d₁ d₂ d₃ d₄))
 
 end rec
@@ -66,7 +66,7 @@ end rec
 /- membership -/
 
 section mem
-variables {s : sigma β} {m : multiset (sigma β)} {d : m.nodup_keys} {f : finmap α β}
+variables {s : sigma β} {m : multiset (sigma β)} {d : m.nodupkeys} {f : finmap α β}
 
 instance : has_mem (sigma β) (finmap α β) :=
 ⟨λ s f, s ∈ f.val⟩
@@ -106,8 +106,8 @@ variables {f g : finmap α β}
 
 theorem ext : f = g ↔ ∀ s, s ∈ f ↔ s ∈ g :=
 val_inj.symm.trans $ nodup_ext
-  (nodup_of_nodup_keys f.nodup_keys)
-  (nodup_of_nodup_keys g.nodup_keys)
+  (nodup_of_nodupkeys f.nodupkeys)
+  (nodup_of_nodupkeys g.nodupkeys)
 
 @[extensionality]
 theorem ext' : (∀ s, s ∈ f ↔ s ∈ g) → f = g :=
@@ -145,7 +145,7 @@ iff.rfl
 iff.rfl
 
 @[simp] theorem val_le_iff : f.val ≤ g.val ↔ f ⊆ g :=
-le_iff_subset (nodup_of_nodup_keys f.nodup_keys)
+le_iff_subset (nodup_of_nodupkeys f.nodupkeys)
 
 instance : has_ssubset (finmap α β) :=
 ⟨λa b, a ⊆ b ∧ ¬ b ⊆ a⟩
@@ -171,7 +171,7 @@ section empty
 variables {s : sigma β} {f : finmap α β}
 
 instance : has_emptyc (finmap α β) :=
-⟨⟨_, nodup_keys_zero⟩⟩
+⟨⟨_, nodupkeys_zero⟩⟩
 
 instance : inhabited (finmap α β) :=
 ⟨∅⟩
@@ -212,7 +212,7 @@ variables {s₁ s₂ : sigma β}
 
 /-- `singleton s` is the set `{s}` containing `s` and nothing else. -/
 def singleton (s : sigma β) : finmap α β :=
-⟨⟦[s]⟧, nodup_keys_singleton s⟩
+⟨⟦[s]⟧, nodupkeys_singleton s⟩
 
 @[simp] theorem singleton_val (s : sigma β) : (singleton s).val = s :: 0 :=
 rfl
@@ -241,7 +241,7 @@ section keys
 variables {a a₁ a₂ : α} {s : sigma β} {f : finmap α β}
 
 def keys (f : finmap α β) : finset α :=
-⟨f.val.keys, nodup_keys_iff.mpr f.nodup_keys⟩
+⟨f.val.keys, nodupkeys_iff.mpr f.nodupkeys⟩
 
 @[simp] theorem keys_val (f : finmap α β) : f.keys.val = f.val.keys :=
 rfl
@@ -270,13 +270,13 @@ section erase
 variables {s : sigma β} {a a₁ a₂ : α} {f g : finmap α β}
 
 def erase (f : finmap α β) (a : α) : finmap α β :=
-⟨kerase a f.nodup_keys, nodup_keys_kerase a f.nodup_keys⟩
+⟨kerase a f.nodupkeys, nodupkeys_kerase a f.nodupkeys⟩
 
-@[simp] theorem erase_val (f : finmap α β) (a : α) : (f.erase a).val = kerase a f.nodup_keys :=
+@[simp] theorem erase_val (f : finmap α β) (a : α) : (f.erase a).val = kerase a f.nodupkeys :=
 rfl
 
 @[simp] theorem mem_erase : s ∈ f.erase a ↔ s.1 ≠ a ∧ s ∈ f :=
-mem_kerase f.nodup_keys
+mem_kerase f.nodupkeys
 
 theorem not_mem_erase (a : α) (b : β a) (f : finmap α β) : sigma.mk a b ∉ f.erase a :=
 by simp
@@ -294,7 +294,7 @@ theorem erase_subset_erase (a : α) (h : f ⊆ g) : f.erase a ⊆ g.erase a :=
 val_le_iff.mp $ kerase_le_kerase _ (val_le_iff.mpr h) _ _
 
 theorem erase_subset (a : α) : f.erase a ⊆ f :=
-kerase_subset a f.nodup_keys
+kerase_subset a f.nodupkeys
 
 end erase
 
@@ -304,14 +304,14 @@ section insert
 variables {a : α} {s : sigma β} {f : finmap α β}
 
 instance : has_insert (sigma β) (finmap α β) :=
-⟨λ s f, ⟨kinsert s f.nodup_keys, nodup_keys_kinsert s f.nodup_keys⟩⟩
+⟨λ s f, ⟨kinsert s f.nodupkeys, nodupkeys_kinsert s f.nodupkeys⟩⟩
 
 theorem insert_def (s : sigma β) (f : finmap α β) :
-  insert s f = mk (kinsert s f.nodup_keys) (nodup_keys_kinsert s f.nodup_keys) :=
+  insert s f = mk (kinsert s f.nodupkeys) (nodupkeys_kinsert s f.nodupkeys) :=
 rfl
 
 @[simp] theorem insert_val (s : sigma β) (f : finmap α β) :
-  (insert s f).val = kinsert s f.nodup_keys :=
+  (insert s f).val = kinsert s f.nodupkeys :=
 rfl
 
 @[simp] theorem insert_empty (s : sigma β) : insert s (∅ : finmap α β) = {s} :=
@@ -319,7 +319,7 @@ rfl
 
 @[simp] theorem mem_insert (s₁ s₂ : sigma β) (f : finmap α β) :
   s₁ ∈ insert s₂ f ↔ s₁ = s₂ ∨ s₁ ∈ f.erase s₂.1 :=
-mem_kinsert f.nodup_keys
+mem_kinsert f.nodupkeys
 
 @[simp] theorem mem_keys_insert : a ∈ keys (insert s f) ↔ a = s.1 ∨ a ∈ keys f :=
 by simp [keys]
@@ -334,7 +334,7 @@ end insert
 section lookup
 
 def lookup (a : α) (f : finmap α β) : option (β a) :=
-klookup a f.nodup_keys
+klookup a f.nodupkeys
 
 theorem lookup_empty (β : α → Type v) (a) : lookup a (∅ : finmap α β) = none :=
 rfl
@@ -346,7 +346,7 @@ end lookup
 section replace
 
 def replace (s : sigma β) (f : finmap α β) : finmap α β :=
-⟨kreplace s f.nodup_keys, nodup_keys_kreplace s f.nodup_keys⟩
+⟨kreplace s f.nodupkeys, nodupkeys_kreplace s f.nodupkeys⟩
 
 @[simp] theorem replace_empty (s : sigma β) : replace s ∅ = ∅ :=
 rfl
@@ -359,19 +359,19 @@ section union
 variables {a : α} {s : sigma β} {f g : finmap α β}
 
 protected def union (f : finmap α β) (g : finmap α β) : finmap α β :=
-⟨kunion f.nodup_keys g.nodup_keys, nodup_keys_kunion f.nodup_keys g.nodup_keys⟩
+⟨kunion f.nodupkeys g.nodupkeys, nodupkeys_kunion f.nodupkeys g.nodupkeys⟩
 
 instance : has_union (finmap α β) :=
 ⟨finmap.union⟩
 
-@[simp] theorem union_val : (f ∪ g).val = kunion f.nodup_keys g.nodup_keys :=
+@[simp] theorem union_val : (f ∪ g).val = kunion f.nodupkeys g.nodupkeys :=
 rfl
 
 @[simp] theorem mem_union (dk : disjoint f.keys g.keys) : s ∈ f ∪ g ↔ s ∈ f ∨ s ∈ g :=
-mem_kunion f.nodup_keys g.nodup_keys (finset.disjoint_val.mp dk)
+mem_kunion f.nodupkeys g.nodupkeys (finset.disjoint_val.mp dk)
 
 @[simp] theorem mem_keys_union : a ∈ keys (f ∪ g) ↔ a ∈ keys f ∨ a ∈ keys g :=
-mem_keys_kunion f.nodup_keys g.nodup_keys
+mem_keys_kunion f.nodupkeys g.nodupkeys
 
 @[simp] theorem union_keys : (f ∪ g).keys = f.keys ∪ g.keys :=
 finset.ext' $ by simp
@@ -389,13 +389,13 @@ section map
 variables {p : β₁ s↪ β₂} {q : β₂ s↪ β₃} {s₁ : sigma β₁} {s₂ : sigma β₂} {f g : finmap α₁ β₁}
 
 def map (p : β₁ s↪ β₂) (f : finmap α₁ β₁) : finmap α₂ β₂ :=
-⟨f.val.map p, nodup_keys_map p.fst_inj f.nodup_keys⟩
+⟨f.val.map p, nodupkeys_map p.fst_inj f.nodupkeys⟩
 
 @[simp] theorem map_val (p : β₁ s↪ β₂) (f : finmap α₁ β₁) : (f.map p).val = f.val.map p :=
 rfl
 
 @[simp] theorem map_mk {m₁ : multiset (sigma β₁)} {m₂ : multiset (sigma β₂)} {p : β₁ s↪ β₂}
-  (d₁ : m₁.nodup_keys) (d₂ : m₂.nodup_keys) : (mk m₁ d₁).map p = mk m₂ d₂ ↔ m₁.map p = m₂ :=
+  (d₁ : m₁.nodupkeys) (d₂ : m₂.nodupkeys) : (mk m₁ d₁).map p = mk m₂ d₂ ↔ m₁.map p = m₂ :=
 by simp [map]
 
 @[simp] theorem map_empty (p : β₁ s↪ β₂) : map p ∅ = ∅ :=
@@ -440,11 +440,11 @@ variables [decidable_eq α₁] [decidable_eq α₂]
 
 @[simp] theorem map_erase (pf : sigma.fst_functional p) :
   (f.erase s₁.1).map p = (f.map p).erase (p s₁).1 :=
-by simp [erase, map_kerase pf p.fst_inj f.nodup_keys]
+by simp [erase, map_kerase pf p.fst_inj f.nodupkeys]
 
 @[simp] theorem map_insert (pf : sigma.fst_functional p) :
   (insert s₁ f).map p = insert (p s₁) (f.map p) :=
-by simp [insert_def, map_kinsert pf p.fst_inj f.nodup_keys]
+by simp [insert_def, map_kinsert pf p.fst_inj f.nodupkeys]
 
 end decidable_eq_α₁α₂
 

@@ -48,49 +48,49 @@ theorem mem_keys : a ∈ l.keys ↔ ∃ (b : β a), sigma.mk a b ∈ l :=
 end keys
 
 /-- No duplicate keys in a list of dependent key-value pairs. -/
-def nodup_keys : list (sigma β) → Prop :=
+def nodupkeys : list (sigma β) → Prop :=
 pairwise (sigma.fst_rel (≠))
 
-section nodup_keys
+section nodupkeys
 variables {s t hd : sigma β} {l l₁ l₂ tl : list (sigma β)}
 
-@[simp] theorem nodup_keys_nil : @nodup_keys α β [] :=
+@[simp] theorem nodupkeys_nil : @nodupkeys α β [] :=
 pairwise.nil _
 
-@[simp] theorem nodup_keys_cons :
-  (hd :: tl).nodup_keys ↔ hd.1 ∉ tl.keys ∧ tl.nodup_keys :=
-by simp [nodup_keys, sigma.fst_rel]
+@[simp] theorem nodupkeys_cons :
+  (hd :: tl).nodupkeys ↔ hd.1 ∉ tl.keys ∧ tl.nodupkeys :=
+by simp [nodupkeys, sigma.fst_rel]
 
-theorem nodup_keys_cons_of_nodup_keys (h : hd.1 ∉ tl.keys)
-  (t : nodup_keys tl) : nodup_keys (hd :: tl) :=
-nodup_keys_cons.mpr ⟨h, t⟩
+theorem nodupkeys_cons_of_nodupkeys (h : hd.1 ∉ tl.keys)
+  (t : nodupkeys tl) : nodupkeys (hd :: tl) :=
+nodupkeys_cons.mpr ⟨h, t⟩
 
-theorem nodup_keys_singleton (s : sigma β) : nodup_keys [s] :=
-nodup_keys_cons_of_nodup_keys (not_mem_nil s.1) nodup_keys_nil
+theorem nodupkeys_singleton (s : sigma β) : nodupkeys [s] :=
+nodupkeys_cons_of_nodupkeys (not_mem_nil s.1) nodupkeys_nil
 
-theorem nodup_of_nodup_keys : l.nodup_keys → l.nodup :=
+theorem nodup_of_nodupkeys : l.nodupkeys → l.nodup :=
 pairwise.imp $ λ ⟨a₁, b₁⟩ ⟨a₂, b₂⟩ (h : a₁ ≠ a₂), by simp [h]
 
-@[simp] theorem nodup_keys_iff : l.keys.nodup ↔ l.nodup_keys :=
+@[simp] theorem nodupkeys_iff : l.keys.nodup ↔ l.nodupkeys :=
 pairwise_map sigma.fst
 
-theorem perm_nodup_keys (p : l₁ ~ l₂) : l₁.nodup_keys ↔ l₂.nodup_keys :=
+theorem perm_nodupkeys (p : l₁ ~ l₂) : l₁.nodupkeys ↔ l₂.nodupkeys :=
 perm_pairwise (@sigma.fst_rel.symm α β (≠) (@ne.symm α)) p
 
-@[simp] theorem nodup_keys_cons_of_not_mem_keys (h : hd.1 ∉ tl.keys) :
-  (hd :: tl).nodup_keys ↔ tl.nodup_keys :=
+@[simp] theorem nodupkeys_cons_of_not_mem_keys (h : hd.1 ∉ tl.keys) :
+  (hd :: tl).nodupkeys ↔ tl.nodupkeys :=
 begin
   induction tl,
   case list.nil { simp },
   case list.cons : hd₁ tl ih {
     simp at h,
-    simp [perm_nodup_keys (perm.swap hd₁ hd tl), ne.symm h.1, ih h.2] }
+    simp [perm_nodupkeys (perm.swap hd₁ hd tl), ne.symm h.1, ih h.2] }
 end
 
 variables {ls : list (list (sigma β))}
 
-theorem nodup_keys_join : (join ls).nodup_keys ↔
-  (∀ {l : list (sigma β)}, l ∈ ls → l.nodup_keys) ∧ pairwise disjoint (ls.map keys) :=
+theorem nodupkeys_join : (join ls).nodupkeys ↔
+  (∀ {l : list (sigma β)}, l ∈ ls → l.nodupkeys) ∧ pairwise disjoint (ls.map keys) :=
 have ∀ (l₁ l₂ : list (sigma β)), (∀ (s ∈ l₁) (t ∈ l₂), sigma.fst_rel ne s t) ↔ disjoint l₁.keys l₂.keys :=
   λ l₁ l₂,
   have h₁ : (∀ (s : sigma β), s ∈ l₁ → s.1 ∉ l₂.keys) → disjoint l₁.keys l₂.keys :=
@@ -104,7 +104,7 @@ pairwise_join.trans $ and_congr iff.rfl $ (pairwise.iff this).trans (pairwise_ma
 theorem nodup_enum_map_fst (l : list α) : (l.enum.map prod.fst).nodup :=
 by simp [list.nodup_range]
 
-theorem perm_keys_of_perm (nd₁ : l₁.nodup_keys) (nd₂ : l₂.nodup_keys) (p : l₁ ~ l₂) :
+theorem perm_keys_of_perm (nd₁ : l₁.nodupkeys) (nd₂ : l₂.nodupkeys) (p : l₁ ~ l₂) :
   l₁.keys ~ l₂.keys :=
 begin
   induction p,
@@ -115,12 +115,12 @@ begin
   case list.perm.swap : s₁ s₂ l {
     simp [perm.swap s₁.1 s₂.1 (keys l)] },
   case list.perm.trans : l₁ l₂ l₃ p₁₂ p₂₃ ih₁₂ ih₂₃ nd₁ nd₃ {
-    have nd₂ : l₂.nodup_keys := (perm_nodup_keys p₁₂).mp nd₁,
+    have nd₂ : l₂.nodupkeys := (perm_nodupkeys p₁₂).mp nd₁,
     exact perm.trans (ih₁₂ nd₁ nd₂) (ih₂₃ nd₂ nd₃) }
 end
 
 -- Is this useful?
-theorem nodup_keys_functional (d : l.nodup_keys) (ms : s ∈ l) (mt : t ∈ l)
+theorem nodupkeys_functional (d : l.nodupkeys) (ms : s ∈ l) (mt : t ∈ l)
   (h : s.1 = t.1) : (eq.rec_on h s.2 : β t.1) = t.2 :=
 begin
   induction d,
@@ -135,11 +135,11 @@ begin
 end
 
 -- Is this useful?
-theorem eq_of_nodup_keys_of_eq_fst (d : l.nodup_keys) (ms : s ∈ l) (mt : t ∈ l)
+theorem eq_of_nodupkeys_of_eq_fst (d : l.nodupkeys) (ms : s ∈ l) (mt : t ∈ l)
   (h : s.1 = t.1) : s = t :=
-sigma.eq h $ nodup_keys_functional d ms mt h
+sigma.eq h $ nodupkeys_functional d ms mt h
 
-end nodup_keys
+end nodupkeys
 
 section decidable_eq_α
 variables [decidable_eq α]
@@ -180,7 +180,7 @@ theorem klookup_not_mem_keys : a ∉ l.keys ↔ klookup a l = none :=
 by induction l with hd _ ih;
    [simp, {by_cases h : hd.1 = a; [simp [h], simp [h, ne.symm h, ih]]}]
 
-theorem klookup_iff_mem (nd : l.nodup_keys) : s.2 ∈ l.klookup s.1 ↔ s ∈ l :=
+theorem klookup_iff_mem (nd : l.nodupkeys) : s.2 ∈ l.klookup s.1 ↔ s ∈ l :=
 begin
   induction l generalizing s,
   case list.nil { simp },
@@ -208,7 +208,7 @@ begin
         { exact (ih nd.2).mpr p } } } }
 end
 
-theorem perm_klookup (nd₁ : l₁.nodup_keys) (nd₂ : l₂.nodup_keys) (p : l₁ ~ l₂) :
+theorem perm_klookup (nd₁ : l₁.nodupkeys) (nd₂ : l₂.nodupkeys) (p : l₁ ~ l₂) :
   l₁.klookup a = l₂.klookup a :=
 begin
   induction p,
@@ -223,7 +223,7 @@ begin
     { induction h₂, simp [nd₁₂.1] },
     { by_cases h₁ : s₁.1 = a; simp [h₂, h₁] } },
   case list.perm.trans : l₁ l₂ l₃ p₁₂ p₂₃ ih₁₂ ih₂₃ nd₁ nd₃ {
-    have nd₂ : l₂.nodup_keys := (perm_nodup_keys p₁₂).mp nd₁,
+    have nd₂ : l₂.nodupkeys := (perm_nodupkeys p₁₂).mp nd₁,
     exact eq.trans (ih₁₂ nd₁ nd₂) (ih₂₃ nd₂ nd₃) }
 end
 
@@ -377,8 +377,8 @@ iff.intro mem_keys_of_mem_keys_kerase $ λ p,
   else
     by simp [q, p]
 
-@[simp] theorem nodup_keys_kerase (a : α) :
-  l.nodup_keys → (l.kerase a).nodup_keys :=
+@[simp] theorem nodupkeys_kerase (a : α) :
+  l.nodupkeys → (l.kerase a).nodupkeys :=
 begin
   induction l,
   case list.nil { simp },
@@ -387,11 +387,11 @@ begin
     simp at nd,
     by_cases h : hd.1 = a,
     { simp [h, nd.2] },
-    { rw [kerase_cons_ne h, nodup_keys_cons],
+    { rw [kerase_cons_ne h, nodupkeys_cons],
       exact ⟨mt (mem_keys_kerase_of_ne (ne.symm h)).mp nd.1, ih nd.2⟩ } }
 end
 
-@[simp] theorem not_mem_keys_kerase_self (nd : l.nodup_keys) :
+@[simp] theorem not_mem_keys_kerase_self (nd : l.nodupkeys) :
   a ∉ (l.kerase a).keys :=
 begin
   induction l,
@@ -438,7 +438,7 @@ else if ha₁ : a₁ ∈ l.keys then
 else
   by simp [ha₁, mt mem_keys_of_mem_keys_kerase ha₁]
 
-@[simp] theorem klookup_kerase (nd : l.nodup_keys) : (l.kerase a).klookup a = none :=
+@[simp] theorem klookup_kerase (nd : l.nodupkeys) : (l.kerase a).klookup a = none :=
 begin
   induction l,
   case list.nil { simp },
@@ -451,8 +451,8 @@ begin
     { simp [h₁, ih nd.2] } }
 end
 
-theorem ne_of_nodup_keys_of_mem_kerase :
-  l.nodup_keys → s ∈ l.kerase a → a ≠ s.1 :=
+theorem ne_of_nodupkeys_of_mem_kerase :
+  l.nodupkeys → s ∈ l.kerase a → a ≠ s.1 :=
 begin
   induction l,
   case list.nil { simp },
@@ -469,7 +469,7 @@ begin
       { exact ih nd.2 h } } }
 end
 
-theorem nodup_keys_kerase_eq_filter (a : α) (nd : l.nodup_keys) :
+theorem nodupkeys_kerase_eq_filter (a : α) (nd : l.nodupkeys) :
   l.kerase a = filter (λ s, s.1 ≠ a) l :=
 begin
   induction nd,
@@ -482,11 +482,11 @@ begin
     { simp [h, ih] } }
 end
 
-theorem mem_kerase_iff_of_nodup_keys {s : sigma β} {a : α} {l : list (sigma β)}
-  (nd : l.nodup_keys) : s ∈ l.kerase a ↔ s.1 ≠ a ∧ s ∈ l :=
-by rw nodup_keys_kerase_eq_filter a nd; simp [and_comm]
+theorem mem_kerase_iff_of_nodupkeys {s : sigma β} {a : α} {l : list (sigma β)}
+  (nd : l.nodupkeys) : s ∈ l.kerase a ↔ s.1 ≠ a ∧ s ∈ l :=
+by rw nodupkeys_kerase_eq_filter a nd; simp [and_comm]
 
-theorem perm_kerase (nd₁ : l₁.nodup_keys) (nd₂ : l₂.nodup_keys) (p : l₁ ~ l₂) :
+theorem perm_kerase (nd₁ : l₁.nodupkeys) (nd₂ : l₂.nodupkeys) (p : l₁ ~ l₂) :
   l₁.kerase a ~ l₂.kerase a :=
 begin
   induction p,
@@ -500,7 +500,7 @@ begin
     { induction h₂, simp [nd₁₂.1] },
     { by_cases h₁ : s₁.1 = a; simp [h₂, h₁, perm.swap] } },
   case list.perm.trans : l₁ l₂ l₃ p₁₂ p₂₃ ih₁₂ ih₂₃ nd₁ nd₃ {
-    have nd₂ : l₂.nodup_keys := (perm_nodup_keys p₁₂).mp nd₁,
+    have nd₂ : l₂.nodupkeys := (perm_nodupkeys p₁₂).mp nd₁,
     exact perm.trans (ih₁₂ nd₁ nd₂) (ih₂₃ nd₂ nd₃) }
 end
 
@@ -522,12 +522,12 @@ by simp [kinsert]
 @[simp] theorem mem_keys_kinsert : a ∈ (l.kinsert s).keys ↔ s.1 = a ∨ a ∈ l.keys :=
 by by_cases h : s.1 = a; [simp [h], simp [h, ne.symm h]]
 
-@[simp] theorem nodup_keys_kinsert (s : sigma β) (nd : l.nodup_keys) :
-  (l.kinsert s).nodup_keys :=
-(nodup_keys_cons_of_not_mem_keys (not_mem_keys_kerase_self nd)).mpr $
-  nodup_keys_kerase _ nd
+@[simp] theorem nodupkeys_kinsert (s : sigma β) (nd : l.nodupkeys) :
+  (l.kinsert s).nodupkeys :=
+(nodupkeys_cons_of_not_mem_keys (not_mem_keys_kerase_self nd)).mpr $
+  nodupkeys_kerase _ nd
 
-theorem perm_kinsert (nd₁ : l₁.nodup_keys) (nd₂ : l₂.nodup_keys) (p : l₁ ~ l₂) :
+theorem perm_kinsert (nd₁ : l₁.nodupkeys) (nd₂ : l₂.nodupkeys) (p : l₁ ~ l₂) :
   l₁.kinsert s ~ l₂.kinsert s :=
 perm.skip s $ perm_kerase nd₁ nd₂ p
 
@@ -576,8 +576,8 @@ theorem mem_keys_of_mem_keys_kreplace_ne (h₁ : a ≠ s.1) (h₂ : a ∈ (l.kre
 let ⟨b, h₃⟩ := exists_mem_of_mem_keys h₂ in
 @mem_keys_of_mem _ _ ⟨a, b⟩ _ (mem_of_mem_kreplace_ne (ne.symm h₁) h₃)
 
-@[simp] theorem nodup_keys_kreplace (s : sigma β) :
-  l.nodup_keys → (l.kreplace s).nodup_keys :=
+@[simp] theorem nodupkeys_kreplace (s : sigma β) :
+  l.nodupkeys → (l.kreplace s).nodupkeys :=
 begin
   induction l,
   case list.nil { simp },
@@ -589,7 +589,7 @@ begin
     { simp [p, nd.1, ih nd.2, mt (mem_keys_of_mem_keys_kreplace_ne p)] } }
 end
 
-theorem perm_kreplace (nd₁ : l₁.nodup_keys) (nd₂ : l₂.nodup_keys) (p : l₁ ~ l₂) :
+theorem perm_kreplace (nd₁ : l₁.nodupkeys) (nd₂ : l₂.nodupkeys) (p : l₁ ~ l₂) :
   l₁.kreplace s ~ l₂.kreplace s :=
 begin
   induction p,
@@ -607,7 +607,7 @@ begin
       { simp [h₁, h₂, perm.swap] } },
     { by_cases h₁ : s₁.1 = s.1; simp [h₁, h₂, perm.swap] } },
   case list.perm.trans : l₁ l₂ l₃ p₁₂ p₂₃ ih₁₂ ih₂₃ nd₁ nd₃ {
-    have nd₂ : l₂.nodup_keys := (perm_nodup_keys p₁₂).mp nd₁,
+    have nd₂ : l₂.nodupkeys := (perm_nodupkeys p₁₂).mp nd₁,
     exact perm.trans (ih₁₂ nd₁ nd₂) (ih₂₃ nd₂ nd₃) }
 end
 
@@ -692,8 +692,8 @@ end
 by induction l₁ with hd _ ih generalizing l₂;
    [simp, {by_cases h : hd.1 = a; [simp [h], simp [h, ne.symm h, ih]]}]
 
-theorem nodup_keys_kunion (nd₁ : l₁.nodup_keys) (nd₂ : l₂.nodup_keys) :
-  (l₁.kunion l₂).nodup_keys :=
+theorem nodupkeys_kunion (nd₁ : l₁.nodupkeys) (nd₂ : l₂.nodupkeys) :
+  (l₁.kunion l₂).nodupkeys :=
 by induction l₁ generalizing l₂; simp at nd₁; simp *
 
 theorem perm_kunion_left (l : list (sigma β)) (p : l₁ ~ l₂) : l₁.kunion l ~ l₂.kunion l :=
@@ -709,15 +709,15 @@ begin
 end
 
 theorem perm_kunion_right : ∀ (l : list (sigma β)) {l₁ l₂ : list (sigma β)},
-  l₁.nodup_keys → l₂.nodup_keys → l₁ ~ l₂ → l.kunion l₁ ~ l.kunion l₂
+  l₁.nodupkeys → l₂.nodupkeys → l₁ ~ l₂ → l.kunion l₁ ~ l.kunion l₂
 | []         _  _  _   _   p := p
 | (hd :: tl) l₁ l₂ nd₁ nd₂ p :=
   by simp [perm.skip hd
-    (perm_kunion_right tl (nodup_keys_kerase hd.1 nd₁)
-                           (nodup_keys_kerase hd.1 nd₂)
+    (perm_kunion_right tl (nodupkeys_kerase hd.1 nd₁)
+                           (nodupkeys_kerase hd.1 nd₂)
                            (perm_kerase nd₁ nd₂ p))]
 
-theorem perm_kunion (nd₂ : l₂.nodup_keys) (nd₄ : l₄.nodup_keys)
+theorem perm_kunion (nd₂ : l₂.nodupkeys) (nd₄ : l₄.nodupkeys)
   (p₁₃ : l₁ ~ l₃) (p₂₄ : l₂ ~ l₄) : l₁.kunion l₂ ~ l₃.kunion l₄ :=
 perm.trans (perm_kunion_left l₂ p₁₃) (perm_kunion_right l₃ nd₂ nd₄ p₂₄)
 
@@ -758,30 +758,30 @@ fi (sigma.eq_fst e) ▸ mem_keys_of_mem m
 
 end keys
 
-section nodup_keys
+section nodupkeys
 variables {s t : sigma β₁} {l : list (sigma β₁)} {f : sigma β₁ → sigma β₂}
 
 -- Is this useful?
-theorem nodup_keys_injective (fi : sigma.fst_injective f) (d : l.nodup_keys)
+theorem nodupkeys_injective (fi : sigma.fst_injective f) (d : l.nodupkeys)
   (ms : s ∈ l) (mt : t ∈ l) (h : f s = f t) : s = t :=
-eq_of_nodup_keys_of_eq_fst d ms mt $ fi $ sigma.eq_fst h
+eq_of_nodupkeys_of_eq_fst d ms mt $ fi $ sigma.eq_fst h
 
-theorem nodup_keys_of_nodup_keys_map (ff : sigma.fst_functional f) :
-  nodup_keys (map f l) → nodup_keys l :=
+theorem nodupkeys_of_nodupkeys_map (ff : sigma.fst_functional f) :
+  nodupkeys (map f l) → nodupkeys l :=
 pairwise_of_pairwise_map f $ λ s t, mt (@ff s t)
 
-theorem nodup_keys_map (fi : sigma.fst_injective f) :
-  l.nodup_keys → (l.map f).nodup_keys :=
+theorem nodupkeys_map (fi : sigma.fst_injective f) :
+  l.nodupkeys → (l.map f).nodupkeys :=
 pairwise_map_of_pairwise f
   (λ s t (h : s ∈ l ∧ t ∈ l ∧ s.1 ≠ t.1), mt (@fi s t) h.2.2) ∘
   pairwise.and_mem.mp
 
-theorem nodup_keys_map_iff (ff : sigma.fst_functional f) (fi : sigma.fst_injective f) :
-  (l.map f).nodup_keys ↔ l.nodup_keys :=
-⟨nodup_keys_of_nodup_keys_map ff, nodup_keys_map fi⟩
+theorem nodupkeys_map_iff (ff : sigma.fst_functional f) (fi : sigma.fst_injective f) :
+  (l.map f).nodupkeys ↔ l.nodupkeys :=
+⟨nodupkeys_of_nodupkeys_map ff, nodupkeys_map fi⟩
 
 -- Is this useful?
-theorem mem_map_of_mem_of_mem_keys_map (fi : sigma.fst_injective f) (d : l.nodup_keys)
+theorem mem_map_of_mem_of_mem_keys_map (fi : sigma.fst_injective f) (d : l.nodupkeys)
   (ms : s ∈ l) (mfs : (f s).1 ∈ (l.map f).keys) : f s ∈ l.map f :=
 begin
   simp [keys] at mfs,
@@ -789,12 +789,12 @@ begin
   cases s with sa sb,
   have ea : a = sa := fi ef,
   subst ea,
-  have eb : b = sb := nodup_keys_functional d mab ms rfl,
+  have eb : b = sb := nodupkeys_functional d mab ms rfl,
   subst eb,
   exact mem_map_of_mem f mab,
 end
 
-end nodup_keys
+end nodupkeys
 
 section map_disjoint
 variables {l₁ l₂ : list (sigma β₁)} {f : sigma β₁ → sigma β₂}
@@ -849,14 +849,14 @@ section αβ₁β₂
 universes u v
 variables {α : Type u} {β₁ β₂ : α → Type v}
 
-section nodup_keys
+section nodupkeys
 variables {l : list (sigma β₁)}
 
-theorem nodup_keys_map_id_iff (f : ∀ a, β₁ a → β₂ a) :
-  (l.map (sigma.map id f)).nodup_keys ↔ l.nodup_keys :=
-nodup_keys_map_iff (sigma.map_id_fst_functional f) (sigma.map_id_fst_injective f)
+theorem nodupkeys_map_id_iff (f : ∀ a, β₁ a → β₂ a) :
+  (l.map (sigma.map id f)).nodupkeys ↔ l.nodupkeys :=
+nodupkeys_map_iff (sigma.map_id_fst_functional f) (sigma.map_id_fst_injective f)
 
-end nodup_keys
+end nodupkeys
 
 end αβ₁β₂
 
