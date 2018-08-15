@@ -87,17 +87,22 @@ begin
     simp [perm_nodup_keys (perm.swap hd₁ hd tl), ne.symm h.1, ih h.2] }
 end
 
-theorem nodup_keys_join {ls : list (list (sigma β))} :
-  (join ls).nodup_keys ↔
-  (∀ {l : list (sigma β)}, l ∈ ls → l.nodup_keys) ∧
-   pairwise (λ (l₁ l₂ : list (sigma β)), disjoint l₁.keys l₂.keys) ls :=
-pairwise_join.trans $ and_congr iff.rfl $ pairwise.iff $ λ s t,
-  have h₁ : (∀ (x : sigma β), x ∈ s → x.1 ∉ t.keys) → disjoint s.keys t.keys :=
+variables {ls : list (list (sigma β))}
+
+theorem nodup_keys_join : (join ls).nodup_keys ↔
+  (∀ {l : list (sigma β)}, l ∈ ls → l.nodup_keys) ∧ pairwise disjoint (ls.map keys) :=
+have ∀ (l₁ l₂ : list (sigma β)), (∀ (s ∈ l₁) (t ∈ l₂), sigma.fst_rel ne s t) ↔ disjoint l₁.keys l₂.keys :=
+  λ l₁ l₂,
+  have h₁ : (∀ (s : sigma β), s ∈ l₁ → s.1 ∉ l₂.keys) → disjoint l₁.keys l₂.keys :=
     λ f a mkas mkat, let ⟨b, mabs⟩ := exists_mem_of_mem_keys mkas in
     absurd mkat $ f ⟨a, b⟩ mabs,
-  have h₂ : disjoint s.keys t.keys → ∀ (x : sigma β), x ∈ s → x.1 ∉ t.keys :=
-    λ dj x mxs mkat, absurd mkat $ dj $ mem_keys_of_mem mxs,
-  ⟨by simpa using h₁, by simpa using h₂⟩
+  have h₂ : disjoint l₁.keys l₂.keys → ∀ (s : sigma β), s ∈ l₁ → s.1 ∉ l₂.keys :=
+    λ dj s mss mkat, absurd mkat $ dj $ mem_keys_of_mem mss,
+  ⟨by simpa using h₁, by simpa using h₂⟩,
+pairwise_join.trans $ and_congr iff.rfl $ (pairwise.iff this).trans (pairwise_map _).symm
+
+theorem nodup_enum_map_fst (l : list α) : (l.enum.map prod.fst).nodup :=
+by simp [list.nodup_range]
 
 theorem perm_keys_of_perm (nd₁ : l₁.nodup_keys) (nd₂ : l₂.nodup_keys) (p : l₁ ~ l₂) :
   l₁.keys ~ l₂.keys :=

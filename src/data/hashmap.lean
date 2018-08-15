@@ -47,31 +47,115 @@ open list
 def empty (m : hashmap β) : Prop :=
 ∀ (i : fin m.n), m.buckets.read i = []
 
+section empty
+variables {m : hashmap β}
+
 theorem empty_mk (β) (n : ℕ) (f : α → fin n) : empty (mk_hashmap β n f) :=
 λ _, rfl
 
 theorem empty_mk_mod (β) (n : ℕ+) (f : α → ℕ) : empty (mk_mod_hashmap β n f) :=
 λ _, rfl
 
-theorem empty_zero (m : hashmap β) (h : m.n = 0) : empty m :=
+@[simp] theorem empty_zero (h : m.n = 0) : empty m :=
 λ i, by cases (h.rec_on i : fin 0).is_lt
 
-def lookup [decidable_eq α] (a : α) (m : hashmap β) : option (β a) :=
-klookup a $ m.buckets.read $ m.hash a
-
-instance [decidable_eq α] : has_mem α (hashmap β) :=
-⟨λ a m, (m.lookup a).is_some⟩
-
-def foldl {γ : Type*} (m : hashmap β) (f : γ → sigma β → γ) (d : γ) : γ :=
-m.buckets.foldl d (λ b r, b.foldl f r)
+end empty
 
 def to_list (m : hashmap β) : list (sigma β) :=
 m.buckets.to_list.join
 
+section to_list
+variables {m : hashmap β} {i : ℕ} {l : list (sigma β)}
+
+-- TODO
+-- theorem empty_to_list : empty m ↔ m.to_list = [] :=
+
+theorem nodup_keys_of_mem_buckets (h : l ∈ m.buckets) : l.nodup_keys :=
+let ⟨i, e⟩ := h in e ▸ m.nodup_keys i
+
+theorem hash_idx_of_enum (he : (i, l) ∈ m.buckets.to_list.enum)
+  {s : sigma β} (hl : s ∈ l) : (m.hash s.1).1 = i :=
+have e₁ : ∃ p, m.buckets.read ⟨i, p⟩ = l := m.buckets.mem_to_list_enum.1 he,
+have e₂ : ∃ p, m.hash s.1 = ⟨i, p⟩ := e₁.imp (λ _ h, m.hash_idx $ h.symm ▸ hl),
+let ⟨_, h⟩ := e₂ in by rw h
+
+theorem disjoint_bucket_keys (m : hashmap β) :
+  pairwise disjoint (m.buckets.to_list.map keys) :=
+begin
+  rw [←enum_map_snd m.buckets.to_list, pairwise_map, pairwise_map],
+  refine pairwise.imp_of_mem _ ((pairwise_map _).mp (nodup_enum_map_fst _)),
+  rw prod.forall,
+  intros n₁ l₁,
+  rw prod.forall,
+  intros n₂ l₂,
+  intros me₁ me₂ e a mka₁ mka₂,
+  apply e,
+  cases exists_mem_of_mem_keys mka₁ with b₁ mab₁,
+  cases exists_mem_of_mem_keys mka₂ with b₂ mab₂,
+  rw [←hash_idx_of_enum me₁ mab₁, ←hash_idx_of_enum me₂ mab₂]
+end
+
+theorem nodup_keys_to_list (m : hashmap β) : m.to_list.nodup_keys :=
+nodup_keys_join.mpr $ and.intro
+  (λ l ml, by simp at ml; cases ml with i e; induction e; exact m.nodup_keys i)
+  m.disjoint_bucket_keys
+
+end to_list
+
+def foldl {γ : Type*} (m : hashmap β) (f : γ → sigma β → γ) (d : γ) : γ :=
+m.buckets.foldl d (λ b r, b.foldl f r)
+
 def keys (m : hashmap β) : list α :=
 m.to_list.keys
 
-def erase [decidable_eq α] (m : hashmap β) (a : α) : hashmap β :=
+section keys
+variables {m : hashmap β}
+
+theorem keys_nodup (m : hashmap β) : m.keys.nodup :=
+nodup_keys_iff.mpr m.nodup_keys_to_list
+
+end keys
+
+section decidable_eq_α
+variables [decidable_eq α]
+
+def lookup (a : α) (m : hashmap β) : option (β a) :=
+klookup a $ m.buckets.read $ m.hash a
+
+section lookup
+variables {m : hashmap β}
+
+@[simp] theorem lookup_empty (a : α) (h : empty m) : lookup a m = none :=
+by simp [lookup, h (m.hash a)]
+
+end lookup
+
+def has_key (m : hashmap β) (a : α) : bool :=
+(m.lookup a).is_some
+
+section has_key
+variables {a : α} {b : β a} {m : hashmap β}
+
+theorem lookup_has_key : (m.lookup a).is_some = m.has_key a :=
+rfl
+
+-- TODO
+-- theorem mem_keys_iff_has_key : ∀ (m : hashmap β), a ∈ m.keys ↔ m.has_key a
+
+end has_key
+
+instance : has_mem (sigma β) (hashmap β) :=
+⟨λ ⟨a, b⟩ m, m.lookup a = some b⟩
+
+section mem
+variables {a : α} {b : β a} {m : hashmap β}
+
+theorem lookup_mem : m.lookup a = some b ↔ sigma.mk a b ∈ m :=
+iff.rfl
+
+end mem
+
+def erase (m : hashmap β) (a : α) : hashmap β :=
 { buckets := m.buckets.modify (m.hash a) (kerase a),
   nodup_keys := λ i,
     by by_cases e : m.hash a = i; simp [e, m.nodup_keys i],
@@ -80,7 +164,7 @@ def erase [decidable_eq α] (m : hashmap β) (a : α) : hashmap β :=
        [exact mem_of_mem_kerase h, exact h],
   ..m }
 
-def insert [decidable_eq α] (s : sigma β) (m : hashmap β) : hashmap β :=
+def insert (s : sigma β) (m : hashmap β) : hashmap β :=
 { buckets := m.buckets.modify (m.hash s.1) (kinsert s),
   nodup_keys := λ i,
     by by_cases e : m.hash s.1 = i; simp [e, m.nodup_keys i],
@@ -93,5 +177,7 @@ def insert [decidable_eq α] (s : sigma β) (m : hashmap β) : hashmap β :=
     { exact m.hash_idx h }
   end,
   ..m }
+
+end decidable_eq_α
 
 end hashmap
