@@ -111,7 +111,7 @@ m.to_list.keys
 section keys
 variables {m : hashmap β}
 
-theorem keys_nodup (m : hashmap β) : m.keys.nodup :=
+theorem nodup_keys (m : hashmap β) : m.keys.nodup :=
 nodupkeys_iff.mpr m.nodupkeys_to_list
 
 end keys
