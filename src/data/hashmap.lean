@@ -116,6 +116,9 @@ nodupkeys_iff.mpr m.nodupkeys_to_list
 
 end keys
 
+instance [has_repr α] [∀ a, has_repr (β a)] : has_repr (hashmap β) :=
+⟨λ m, "{" ++ string.intercalate ", " (m.to_list.map repr) ++ "}"⟩
+
 section decidable_eq_α
 variables [decidable_eq α]
 
