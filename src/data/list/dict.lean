@@ -180,7 +180,7 @@ theorem klookup_not_mem_keys : a ∉ l.keys ↔ klookup a l = none :=
 by induction l with hd _ ih;
    [simp, {by_cases h : hd.1 = a; [simp [h], simp [h, ne.symm h, ih]]}]
 
-theorem klookup_iff_mem (nd : l.nodupkeys) : s.2 ∈ l.klookup s.1 ↔ s ∈ l :=
+theorem mem_klookup_of_nodupkeys (nd : l.nodupkeys) : s.2 ∈ l.klookup s.1 ↔ s ∈ l :=
 begin
   induction l generalizing s,
   case list.nil { simp },
@@ -482,8 +482,8 @@ begin
     { simp [h, ih] } }
 end
 
-theorem mem_kerase_iff_of_nodupkeys {s : sigma β} {a : α} {l : list (sigma β)}
-  (nd : l.nodupkeys) : s ∈ l.kerase a ↔ s.1 ≠ a ∧ s ∈ l :=
+@[simp] theorem mem_kerase_of_nodupkeys (nd : l.nodupkeys) :
+  s ∈ l.kerase a ↔ s.1 ≠ a ∧ s ∈ l :=
 by rw nodupkeys_kerase_eq_filter a nd; simp [and_comm]
 
 theorem perm_kerase (nd₁ : l₁.nodupkeys) (nd₂ : l₂.nodupkeys) (p : l₁ ~ l₂) :

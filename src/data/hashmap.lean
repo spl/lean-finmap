@@ -123,7 +123,18 @@ def lookup (a : α) (m : hashmap β) : option (β a) :=
 klookup a $ m.buckets.read $ m.hash a
 
 section lookup
-variables {m : hashmap β}
+variables {a : α} {m : hashmap β}
+
+section val
+variables {n : ℕ} {hash : α → fin n} {bs : array n (list (sigma β))}
+  {nodupkeys : ∀ (i : fin n), (bs.read i).nodupkeys}
+  {hash_idx : ∀ {i : fin n} {s : sigma β}, s ∈ bs.read i → hash s.1 = i}
+
+@[simp] theorem lookup_val :
+  lookup a (mk n hash bs nodupkeys @hash_idx) = klookup a (bs.read (hash a)) :=
+rfl
+
+end val
 
 @[simp] theorem lookup_empty (a : α) (h : empty m) : lookup a m = none :=
 by simp [lookup, h (m.hash a)]
@@ -145,12 +156,23 @@ rfl
 end has_key
 
 instance : has_mem (sigma β) (hashmap β) :=
-⟨λ ⟨a, b⟩ m, m.lookup a = some b⟩
+⟨λ s m, s.2 ∈ m.lookup s.1⟩
 
 section mem
-variables {a : α} {b : β a} {m : hashmap β}
+variables {a : α} {b : β a} {s : sigma β} {m : hashmap β}
 
-theorem lookup_mem : m.lookup a = some b ↔ sigma.mk a b ∈ m :=
+section val
+variables {n : ℕ} {hash : α → fin n} {bs : array n (list (sigma β))}
+  {nodupkeys : ∀ (i : fin n), (bs.read i).nodupkeys}
+  {hash_idx : ∀ {i : fin n} {s : sigma β}, s ∈ bs.read i → hash s.1 = i}
+
+@[simp] theorem mem_val :
+  s ∈ mk n hash bs nodupkeys @hash_idx ↔ s ∈ bs.read (hash s.1) :=
+mem_klookup_of_nodupkeys (nodupkeys (hash s.1))
+
+end val
+
+theorem mem_lookup : s ∈ m ↔ s.2 ∈ m.lookup s.1 :=
 iff.rfl
 
 end mem
@@ -164,7 +186,34 @@ def erase (m : hashmap β) (a : α) : hashmap β :=
        [exact mem_of_mem_kerase h, exact h],
   ..m }
 
-def insert (s : sigma β) (m : hashmap β) : hashmap β :=
+section erase
+variables {a : α} {s : sigma β} {m : hashmap β}
+
+section val
+variables {n : ℕ} {hash : α → fin n} {bs : array n (list (sigma β))}
+  {nodupkeys : ∀ (i : fin n), (bs.read i).nodupkeys}
+  {hash_idx : ∀ {i : fin n} {s : sigma β}, s ∈ bs.read i → hash s.1 = i}
+
+@[simp] theorem mem_erase_val :
+  s ∈ (mk n hash bs nodupkeys @hash_idx).erase a ↔ s.1 ≠ a ∧ s ∈ bs.read (hash s.1) :=
+begin
+  unfold erase,
+  by_cases h : hash s.1 = hash a,
+  { simp [h, nodupkeys (hash a)] },
+  { simp [ne.symm h, mt (congr_arg _) h] }
+end
+
+end val
+
+theorem lookup_erase (m : hashmap β) : (m.erase a).lookup a = none :=
+by simp [erase, lookup, m.nodupkeys (m.hash a)]
+
+@[simp] theorem mem_erase : s ∈ m.erase a ↔ s.1 ≠ a ∧ s ∈ m :=
+by cases m; simp
+
+end erase
+
+protected def insert (s : sigma β) (m : hashmap β) : hashmap β :=
 { buckets := m.buckets.modify (m.hash s.1) (kinsert s),
   nodupkeys := λ i,
     by by_cases e : m.hash s.1 = i; simp [e, m.nodupkeys i],
@@ -177,6 +226,33 @@ def insert (s : sigma β) (m : hashmap β) : hashmap β :=
     { exact m.hash_idx h }
   end,
   ..m }
+
+instance : has_insert (sigma β) (hashmap β) :=
+⟨hashmap.insert⟩
+
+section insert
+variables {s t : sigma β} {m : hashmap β}
+
+section val
+variables {n : ℕ} {hash : α → fin n} {bs : array n (list (sigma β))}
+  {nodupkeys : ∀ (i : fin n), (bs.read i).nodupkeys}
+  {hash_idx : ∀ {i : fin n} {s : sigma β}, s ∈ bs.read i → hash s.1 = i}
+
+@[simp] theorem mem_insert_val :
+  s ∈ insert t (mk n hash bs nodupkeys @hash_idx) ↔ s = t ∨ s.1 ≠ t.1 ∧ s ∈ bs.read (hash s.1) :=
+begin
+  unfold insert has_insert.insert hashmap.insert,
+  by_cases h : hash s.1 = hash t.1,
+  { simp [h, nodupkeys (hash t.1)] },
+  { have h' : s.1 ≠ t.1 := mt (congr_arg _) h, simp [ne.symm h, h', mt sigma.eq_fst h'] }
+end
+
+end val
+
+@[simp] theorem mem_insert : s ∈ insert t m ↔ s = t ∨ s.1 ≠ t.1 ∧ s ∈ m :=
+by cases m; simp
+
+end insert
 
 def insert_list (l : list (sigma β)) (m : hashmap β) : hashmap β :=
 l.foldl (flip insert) m
