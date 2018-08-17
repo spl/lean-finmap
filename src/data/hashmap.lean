@@ -67,6 +67,16 @@ m.buckets.to_list.join
 section to_list
 variables {m : hashmap β} {i : ℕ} {l : list (sigma β)}
 
+section val
+variables {n : ℕ} {hash : α → fin n} {bs : array n (list (sigma β))}
+  {ndk : ∀ (i : fin n), (bs.read i).nodupkeys}
+  {hash_idx : ∀ {i : fin n} {s : sigma β}, s ∈ bs.read i → hash s.1 = i}
+
+@[simp] theorem to_list_val : (mk n hash bs ndk @hash_idx).to_list = bs.to_list.join :=
+rfl
+
+end val
+
 -- TODO
 -- theorem empty_to_list : empty m ↔ m.to_list = [] :=
 
@@ -130,11 +140,11 @@ variables {a : α} {m : hashmap β}
 
 section val
 variables {n : ℕ} {hash : α → fin n} {bs : array n (list (sigma β))}
-  {nodupkeys : ∀ (i : fin n), (bs.read i).nodupkeys}
+  {ndk : ∀ (i : fin n), (bs.read i).nodupkeys}
   {hash_idx : ∀ {i : fin n} {s : sigma β}, s ∈ bs.read i → hash s.1 = i}
 
 @[simp] theorem lookup_val :
-  lookup a (mk n hash bs nodupkeys @hash_idx) = klookup a (bs.read (hash a)) :=
+  lookup a (mk n hash bs ndk @hash_idx) = klookup a (bs.read (hash a)) :=
 rfl
 
 end val
@@ -166,12 +176,11 @@ variables {a : α} {b : β a} {s : sigma β} {m : hashmap β}
 
 section val
 variables {n : ℕ} {hash : α → fin n} {bs : array n (list (sigma β))}
-  {nodupkeys : ∀ (i : fin n), (bs.read i).nodupkeys}
+  {ndk : ∀ (i : fin n), (bs.read i).nodupkeys}
   {hash_idx : ∀ {i : fin n} {s : sigma β}, s ∈ bs.read i → hash s.1 = i}
 
-@[simp] theorem mem_val :
-  s ∈ mk n hash bs nodupkeys @hash_idx ↔ s ∈ bs.read (hash s.1) :=
-mem_klookup_of_nodupkeys (nodupkeys (hash s.1))
+@[simp] theorem mem_val : s ∈ mk n hash bs ndk @hash_idx ↔ s ∈ bs.read (hash s.1) :=
+mem_klookup_of_nodupkeys (ndk (hash s.1))
 
 end val
 
@@ -194,15 +203,15 @@ variables {a : α} {s : sigma β} {m : hashmap β}
 
 section val
 variables {n : ℕ} {hash : α → fin n} {bs : array n (list (sigma β))}
-  {nodupkeys : ∀ (i : fin n), (bs.read i).nodupkeys}
+  {ndk : ∀ (i : fin n), (bs.read i).nodupkeys}
   {hash_idx : ∀ {i : fin n} {s : sigma β}, s ∈ bs.read i → hash s.1 = i}
 
 @[simp] theorem mem_erase_val :
-  s ∈ (mk n hash bs nodupkeys @hash_idx).erase a ↔ s.1 ≠ a ∧ s ∈ bs.read (hash s.1) :=
+  s ∈ (mk n hash bs ndk @hash_idx).erase a ↔ s.1 ≠ a ∧ s ∈ bs.read (hash s.1) :=
 begin
   unfold erase,
   by_cases h : hash s.1 = hash a,
-  { simp [h, nodupkeys (hash a)] },
+  { simp [h, ndk (hash a)] },
   { simp [ne.symm h, mt (congr_arg _) h] }
 end
 
@@ -238,15 +247,15 @@ variables {s t : sigma β} {m : hashmap β}
 
 section val
 variables {n : ℕ} {hash : α → fin n} {bs : array n (list (sigma β))}
-  {nodupkeys : ∀ (i : fin n), (bs.read i).nodupkeys}
+  {ndk : ∀ (i : fin n), (bs.read i).nodupkeys}
   {hash_idx : ∀ {i : fin n} {s : sigma β}, s ∈ bs.read i → hash s.1 = i}
 
 @[simp] theorem mem_insert_val :
-  s ∈ insert t (mk n hash bs nodupkeys @hash_idx) ↔ s = t ∨ s.1 ≠ t.1 ∧ s ∈ bs.read (hash s.1) :=
+  s ∈ insert t (mk n hash bs ndk @hash_idx) ↔ s = t ∨ s.1 ≠ t.1 ∧ s ∈ bs.read (hash s.1) :=
 begin
   unfold insert has_insert.insert hashmap.insert,
   by_cases h : hash s.1 = hash t.1,
-  { simp [h, nodupkeys (hash t.1)] },
+  { simp [h, ndk (hash t.1)] },
   { have h' : s.1 ≠ t.1 := mt (congr_arg _) h, simp [ne.symm h, h', mt sigma.eq_fst h'] }
 end
 
