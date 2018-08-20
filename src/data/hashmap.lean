@@ -16,33 +16,34 @@ structure hashmap {α : Type u} (β : α → Type v) :=
 /- Each member of a bucket has a key hash equal to the index of that bucket. -/
 (hash_idx : ∀ {i : fin n} {s : sigma β}, s ∈ buckets.read i → hash s.1 = i)
 
+namespace hashmap
+open list
+
 /-- Default number of buckets (8) -/
-def hashmap.default_n : ℕ :=
+def default_n : ℕ :=
 8
 
 /-- Default positive number of buckets (default_n) -/
-def hashmap.default_pn : ℕ+ :=
-⟨hashmap.default_n, dec_trivial⟩
-
-variables {α : Type u} {β : α → Type v}
+def default_pn : ℕ+ :=
+⟨default_n, dec_trivial⟩
 
 /-- Construct an empty hashmap with a given number of buckets (or the default)
 and a hash function -/
-def mk_hashmap (β) (n : ℕ := hashmap.default_n) (f : α → fin n) : hashmap β :=
+def mk_empty {α} (β : α → Type v) (n : ℕ := default_n) (f : α → fin n) : hashmap β :=
 ⟨n, f, mk_array n [], λ i, list.nodupkeys_nil, λ _ _ h, by cases h⟩
 
 /-- Create a hash function from a function `f : α → ℕ` using the result modulo
 the number of buckets -/
-def hashmap.mk_mod_hash (n : ℕ+ := hashmap.default_pn) (f : α → ℕ) (a : α) : fin n.val :=
+def hash_mod {α} (n : ℕ+ := default_pn) (f : α → ℕ) (a : α) : fin n.val :=
 ⟨f a % n.val, nat.mod_lt _ n.property⟩
 
 /-- Construct an empty hashmap with a given number of buckets (or the default)
 and a modulo hash function -/
-def mk_hashmap_mod (β) (n : ℕ+ := hashmap.default_pn) (f : α → ℕ) : hashmap β :=
-mk_hashmap β n (hashmap.mk_mod_hash n f)
+def mk_empty_mod {α} (β : α → Type v) (n : ℕ+ := default_pn) (f : α → ℕ) : hashmap β :=
+mk_empty β n (hash_mod n f)
 
-namespace hashmap
-open list
+section αβ
+variables {α : Type u} {β : α → Type v}
 
 def empty (m : hashmap β) : Prop :=
 ∀ (i : fin m.n), m.buckets.read i = []
@@ -50,10 +51,10 @@ def empty (m : hashmap β) : Prop :=
 section empty
 variables {m : hashmap β}
 
-theorem empty_mk (β) (n : ℕ) (f : α → fin n) : empty (mk_hashmap β n f) :=
+theorem empty_mk_empty (β) (n : ℕ) (f : α → fin n) : empty (mk_empty β n f) :=
 λ _, rfl
 
-theorem empty_mk_mod (β) (n : ℕ+) (f : α → ℕ) : empty (mk_hashmap_mod β n f) :=
+theorem empty_mk_empty_mod (β) (n : ℕ+) (f : α → ℕ) : empty (mk_empty_mod β n f) :=
 λ _, rfl
 
 @[simp] theorem empty_zero (h : m.n = 0) : empty m :=
@@ -295,11 +296,13 @@ def insert_list (l : list (sigma β)) (m : hashmap β) : hashmap β :=
 l.foldl (flip insert) m
 
 def of_list (n : ℕ := default_n) (f : α → fin n) (l : list (sigma β)) : hashmap β :=
-insert_list l $ mk_hashmap _ n f
+insert_list l $ mk_empty _ n f
 
 def of_list_mod (n : ℕ+ := default_pn) (f : α → ℕ) (l : list (sigma β)) : hashmap β :=
-insert_list l $ mk_hashmap_mod _ n f
+insert_list l $ mk_empty_mod _ n f
 
 end decidable_eq_α
+
+end αβ
 
 end hashmap
