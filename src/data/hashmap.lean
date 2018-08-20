@@ -77,6 +77,31 @@ rfl
 
 end val
 
+theorem ext_core {m₁ m₂ : hashmap β} :
+  m₁.n = m₂.n →
+  m₁.hash == m₂.hash →
+  m₁.buckets == m₂.buckets →
+  m₁ = m₂ :=
+begin
+  cases m₁,
+  cases m₂,
+  dsimp,
+  intros hn hh hb,
+  congr,
+  repeat { assumption },
+  { apply proof_irrel_heq, substs hn hb, refl },
+  { apply proof_irrel_heq, substs hn hh hb, refl }
+end
+
+theorem ext {m₁ m₂ : hashmap β}
+  (hn : m₁.n = m₂.n)
+  (hh : ∀ (a : α), (eq.rec_on hn (m₁.hash a) : fin m₂.n) = m₂.hash a)
+  (hb : ∀ (i : fin m₁.n), m₁.buckets.read i = m₂.buckets.read (eq.rec_on hn i)) :
+  m₁ = m₂ :=
+ext_core hn
+  (function.hfunext rfl (λ a₁ a₂ p, heq_of_eq_rec_left hn (by rw eq_of_heq p; apply hh)))
+  (by cases m₁; cases m₂; dsimp at hn; subst hn; exact heq_of_eq (array.ext hb))
+
 -- TODO
 -- theorem empty_to_list : empty m ↔ m.to_list = [] :=
 
