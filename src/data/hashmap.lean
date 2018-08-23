@@ -76,6 +76,9 @@ variables {n : ℕ} {hash : α → fin n} {bs : array n (list (sigma β))}
 @[simp] theorem to_list_val : (mk n hash bs ndk @hash_idx).to_list = bs.to_list.join :=
 rfl
 
+theorem empty_to_list : empty m ↔ m.to_list = [] :=
+array.to_list_join_nil.symm
+
 end val
 
 theorem ext_core {m₁ m₂ : hashmap β} :
@@ -102,9 +105,6 @@ theorem ext {m₁ m₂ : hashmap β}
 ext_core hn
   (function.hfunext rfl (λ a₁ a₂ p, heq_of_eq_rec_left hn (by rw eq_of_heq p; apply hh)))
   (by cases m₁; cases m₂; dsimp at hn; subst hn; exact heq_of_eq (array.ext hb))
-
--- TODO
--- theorem empty_to_list : empty m ↔ m.to_list = [] :=
 
 theorem nodupkeys_of_mem_buckets (h : l ∈ m.buckets) : l.nodupkeys :=
 let ⟨i, e⟩ := h in e ▸ m.nodupkeys i
