@@ -30,7 +30,7 @@ def default_pn : ℕ+ :=
 /-- Construct an empty hashmap with a given number of buckets (or the default)
 and a hash function -/
 def mk_empty {α} (β : α → Type v) (n : ℕ := default_n) (f : α → fin n) : hashmap β :=
-⟨n, f, mk_array n [], λ i, list.nodupkeys_nil, λ _ _ h, by cases h⟩
+⟨n, f, mk_array n [], λ i, nodupkeys_nil, λ _ _ h, by cases h⟩
 
 /-- Create a hash function from a function `f : α → ℕ` using the result modulo
 the number of buckets -/
@@ -234,7 +234,7 @@ theorem mem_def : s ∈ m ↔ s.2 ∈ m.lookup s.1 :=
 iff.rfl
 
 @[simp] theorem mem_to_list : s ∈ m.to_list ↔ s ∈ m :=
-calc s ∈ m.to_list ↔ ∃ l, l ∈ m.to_lists ∧ s ∈ l : list.mem_join
+calc s ∈ m.to_list ↔ ∃ l, l ∈ m.to_lists ∧ s ∈ l : mem_join
   ... ↔ ∃ l, l ∈ m.buckets ∧ s ∈ l : by simp only [mem_to_lists]
   ... ↔ s ∈ m : lookup_iff_mem_buckets.symm
 
