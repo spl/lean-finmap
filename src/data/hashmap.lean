@@ -147,11 +147,11 @@ section to_list
 variables {m : hashmap β} {i : ℕ} {l : list (sigma β)} {s : sigma β}
 
 section val
-variables {n : ℕ} {hash : α → fin n} {bs : array n (list (sigma β))}
+variables {n : ℕ} {h : α → fin n} {bs : array n (list (sigma β))}
   {ndk : ∀ (i : fin n), (bs.read i).nodupkeys}
-  {hash_index : ∀ {i : fin n} {s : sigma β}, s ∈ bs.read i → hash s.1 = i}
+  {hi : ∀ {i : fin n} {s : sigma β}, s ∈ bs.read i → h s.1 = i}
 
-@[simp] theorem to_list_val : (mk n hash bs ndk @hash_index).to_list = bs.to_list.join :=
+@[simp] theorem to_list_val : (mk n h bs ndk @hi).to_list = bs.to_list.join :=
 rfl
 
 theorem empty_to_list : empty m ↔ m.to_list = [] :=
@@ -181,6 +181,17 @@ m.to_list.keys
 section keys
 variables {m : hashmap β}
 
+section val
+variables {n : ℕ} {h : α → fin n} {bs : array n (list (sigma β))}
+  {ndk : ∀ (i : fin n), (bs.read i).nodupkeys}
+  {hi : ∀ {i : fin n} {s : sigma β}, s ∈ bs.read i → h s.1 = i}
+
+@[simp] theorem keys_val :
+  (mk n h bs ndk @hi).keys = bs.to_list.join.keys :=
+rfl
+
+end val
+
 theorem nodup_keys (m : hashmap β) : m.keys.nodup :=
 nodupkeys_iff.mpr m.nodupkeys_to_list
 
@@ -204,12 +215,12 @@ section lookup
 variables {a : α} {s : sigma β} {m : hashmap β}
 
 section val
-variables {n : ℕ} {hash : α → fin n} {bs : array n (list (sigma β))}
+variables {n : ℕ} {h : α → fin n} {bs : array n (list (sigma β))}
   {ndk : ∀ (i : fin n), (bs.read i).nodupkeys}
-  {hash_index : ∀ {i : fin n} {s : sigma β}, s ∈ bs.read i → hash s.1 = i}
+  {hi : ∀ {i : fin n} {s : sigma β}, s ∈ bs.read i → h s.1 = i}
 
 @[simp] theorem lookup_val :
-  lookup a (mk n hash bs ndk @hash_index) = klookup a (bs.read (hash a)) :=
+  lookup a (mk n h bs ndk @hi) = klookup a (bs.read (h a)) :=
 rfl
 
 end val
@@ -228,23 +239,6 @@ calc s.2 ∈ m.lookup s.1 ↔ s ∈ m.buckets.read (m.hash s.1) :
 
 end lookup
 
-/- has_key -/
-
-/-- Test for the presence of a key in a hashmap -/
-def has_key (m : hashmap β) (a : α) : bool :=
-(m.lookup a).is_some
-
-section has_key
-variables {a : α} {m : hashmap β}
-
-theorem has_key_def : m.has_key a = (m.lookup a).is_some :=
-rfl
-
--- TODO
--- theorem mem_keys_iff_has_key : ∀ (m : hashmap β), a ∈ m.keys ↔ m.has_key a
-
-end has_key
-
 /- mem -/
 
 instance : has_mem (sigma β) (hashmap β) :=
@@ -254,12 +248,12 @@ section mem
 variables {s : sigma β} {m : hashmap β}
 
 section val
-variables {n : ℕ} {hash : α → fin n} {bs : array n (list (sigma β))}
+variables {n : ℕ} {h : α → fin n} {bs : array n (list (sigma β))}
   {ndk : ∀ (i : fin n), (bs.read i).nodupkeys}
-  {hash_index : ∀ {i : fin n} {s : sigma β}, s ∈ bs.read i → hash s.1 = i}
+  {hi : ∀ {i : fin n} {s : sigma β}, s ∈ bs.read i → h s.1 = i}
 
-@[simp] theorem mem_val : s ∈ mk n hash bs ndk @hash_index ↔ s ∈ bs.read (hash s.1) :=
-mem_klookup_of_nodupkeys (ndk (hash s.1))
+@[simp] theorem mem_val : s ∈ mk n h bs ndk @hi ↔ s ∈ bs.read (h s.1) :=
+mem_klookup_of_nodupkeys (ndk (h s.1))
 
 end val
 
@@ -272,6 +266,36 @@ calc s ∈ m.to_list ↔ ∃ l, l ∈ m.to_lists ∧ s ∈ l : mem_join
   ... ↔ s ∈ m : lookup_iff_mem_buckets.symm
 
 end mem
+
+/- has_key -/
+
+/-- Test for the presence of a key in a hashmap -/
+def has_key (m : hashmap β) (a : α) : bool :=
+(m.lookup a).is_some
+
+section has_key
+variables {a : α} {m : hashmap β}
+
+section val
+variables {n : ℕ} {h : α → fin n} {bs : array n (list (sigma β))}
+  {ndk : ∀ (i : fin n), (bs.read i).nodupkeys}
+  {hi : ∀ {i : fin n} {s : sigma β}, s ∈ bs.read i → h s.1 = i}
+
+@[simp] theorem has_key_val :
+  (mk n h bs ndk @hi).has_key a = (klookup a (bs.read (h a))).is_some :=
+rfl
+
+end val
+
+theorem has_key_def : m.has_key a = (m.lookup a).is_some :=
+rfl
+
+@[simp] theorem mem_keys_iff_has_key : a ∈ m.keys ↔ m.has_key a :=
+calc a ∈ m.keys ↔ ∃ (b : β a), sigma.mk a b ∈ m.to_list : mem_keys
+  ... ↔ ∃ (b : β a), b ∈ m.lookup a : exists_congr $ λ b, mem_to_list
+  ... ↔ m.has_key a : klookup_is_some.symm
+
+end has_key
 
 /- erase -/
 
@@ -287,17 +311,17 @@ section erase
 variables {a : α} {s : sigma β} {m : hashmap β}
 
 section val
-variables {n : ℕ} {hash : α → fin n} {bs : array n (list (sigma β))}
+variables {n : ℕ} {h : α → fin n} {bs : array n (list (sigma β))}
   {ndk : ∀ (i : fin n), (bs.read i).nodupkeys}
-  {hash_index : ∀ {i : fin n} {s : sigma β}, s ∈ bs.read i → hash s.1 = i}
+  {hi : ∀ {i : fin n} {s : sigma β}, s ∈ bs.read i → h s.1 = i}
 
 @[simp] theorem mem_erase_val :
-  s ∈ (mk n hash bs ndk @hash_index).erase a ↔ s.1 ≠ a ∧ s ∈ bs.read (hash s.1) :=
+  s ∈ (mk n h bs ndk @hi).erase a ↔ s.1 ≠ a ∧ s ∈ bs.read (h s.1) :=
 begin
   unfold erase,
-  by_cases h : hash s.1 = hash a,
-  { simp [h, ndk (hash a)] },
-  { simp [ne.symm h, mt (congr_arg _) h] }
+  by_cases e : h s.1 = h a,
+  { simp [e, ndk (h a)] },
+  { simp [ne.symm e, mt (congr_arg _) e] }
 end
 
 end val
@@ -332,17 +356,17 @@ section insert
 variables {s t : sigma β} {m : hashmap β}
 
 section val
-variables {n : ℕ} {hash : α → fin n} {bs : array n (list (sigma β))}
+variables {n : ℕ} {h : α → fin n} {bs : array n (list (sigma β))}
   {ndk : ∀ (i : fin n), (bs.read i).nodupkeys}
-  {hash_index : ∀ {i : fin n} {s : sigma β}, s ∈ bs.read i → hash s.1 = i}
+  {hi : ∀ {i : fin n} {s : sigma β}, s ∈ bs.read i → h s.1 = i}
 
 @[simp] theorem mem_insert_val :
-  s ∈ insert t (mk n hash bs ndk @hash_index) ↔ s = t ∨ s.1 ≠ t.1 ∧ s ∈ bs.read (hash s.1) :=
+  s ∈ insert t (mk n h bs ndk @hi) ↔ s = t ∨ s.1 ≠ t.1 ∧ s ∈ bs.read (h s.1) :=
 begin
   unfold insert has_insert.insert hashmap.insert,
-  by_cases h : hash s.1 = hash t.1,
-  { simp [h, ndk (hash t.1)] },
-  { have h' : s.1 ≠ t.1 := mt (congr_arg _) h, simp [ne.symm h, h', mt sigma.eq_fst h'] }
+  by_cases e : h s.1 = h t.1,
+  { simp [e, ndk (h t.1)] },
+  { have e' : s.1 ≠ t.1 := mt (congr_arg _) e, simp [ne.symm e, e', mt sigma.eq_fst e'] }
 end
 
 end val

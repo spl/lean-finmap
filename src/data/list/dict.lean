@@ -190,6 +190,9 @@ by simp [klookup, h]
     | or.inr ⟨b, h₂⟩ := or.inr ⟨b, (klookup_cons_ne h₁).trans h₂⟩
     end
 
+theorem klookup_is_some : (l.klookup a).is_some ↔ ∃ (b : β a), b ∈ l.klookup a :=
+by simp [option.is_some_iff_exists]
+
 theorem klookup_not_mem_keys : a ∉ l.keys ↔ klookup a l = none :=
 by induction l with hd _ ih;
    [simp, {by_cases h : hd.1 = a; [simp [h], simp [h, ne.symm h, ih]]}]
