@@ -179,7 +179,7 @@ by simp [klookup, h]
 by simp [klookup, h]
 
 @[simp] theorem klookup_eq (a : α) : ∀ (l : list (sigma β)),
-  klookup a l = none ∨ ∃ (b : β a), klookup a l = some b
+  klookup a l = none ∨ ∃ (b : β a), b ∈ l.klookup a
 | []         := or.inl rfl
 | (hd :: tl) :=
   if h₁ : hd.1 = a then
@@ -194,7 +194,7 @@ theorem klookup_not_mem_keys : a ∉ l.keys ↔ klookup a l = none :=
 by induction l with hd _ ih;
    [simp, {by_cases h : hd.1 = a; [simp [h], simp [h, ne.symm h, ih]]}]
 
-theorem mem_klookup_of_nodupkeys (nd : l.nodupkeys) : s.2 ∈ l.klookup s.1 ↔ s ∈ l :=
+@[simp] theorem mem_klookup_of_nodupkeys (nd : l.nodupkeys) : s.2 ∈ l.klookup s.1 ↔ s ∈ l :=
 begin
   induction l generalizing s,
   case list.nil { simp },

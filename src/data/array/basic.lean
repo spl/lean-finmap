@@ -61,7 +61,7 @@ theorem pop_back_push_back (v : α) : ∀ {a : array n α}, a = (a.push_back v).
 | ⟨a⟩ := array.ext $ λ ⟨i, i_lt_n⟩,
   by simp [read, d_array.read, push_back, pop_back, ne_of_lt i_lt_n]
 
-theorem pop_back_rev_list {a : array (n+1) α} :
+@[simp] theorem pop_back_rev_list {a : array (n+1) α} :
   a.read (fin.last n) :: a.pop_back.rev_list = a.rev_list :=
 by rw ←push_back_rev_list; congr; exact (push_back_pop_back rfl).symm
 

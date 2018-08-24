@@ -62,11 +62,44 @@ theorem empty_mk_empty_mod (β) (n : ℕ+) (f : α → ℕ) : empty (mk_empty_mo
 
 end empty
 
+def to_lists (m : hashmap β) : list (list (sigma β)) :=
+m.buckets.to_list
+
+section to_lists
+variables {m : hashmap β} {i : ℕ} {l : list (sigma β)}
+
+@[simp] theorem mem_to_lists : l ∈ m.to_lists ↔ l ∈ m.buckets :=
+array.mem_to_list _ _
+
+theorem hash_idx_of_to_lists_enum (he : (i, l) ∈ m.to_lists.enum)
+  {s : sigma β} (hl : s ∈ l) : (m.hash s.1).1 = i :=
+have e₁ : ∃ p, m.buckets.read ⟨i, p⟩ = l := m.buckets.mem_to_list_enum.1 he,
+have e₂ : ∃ p, m.hash s.1 = ⟨i, p⟩ := e₁.imp (λ _ h, m.hash_idx $ h.symm ▸ hl),
+let ⟨_, h⟩ := e₂ in by rw h
+
+theorem disjoint_to_lists_map_keys (m : hashmap β) :
+  pairwise disjoint (m.to_lists.map keys) :=
+begin
+  rw [←enum_map_snd m.to_lists, pairwise_map, pairwise_map],
+  refine pairwise.imp_of_mem _ ((pairwise_map _).mp (nodup_enum_map_fst _)),
+  rw prod.forall,
+  intros n₁ l₁,
+  rw prod.forall,
+  intros n₂ l₂,
+  intros me₁ me₂ e a mka₁ mka₂,
+  apply e,
+  cases exists_mem_of_mem_keys mka₁ with b₁ mab₁,
+  cases exists_mem_of_mem_keys mka₂ with b₂ mab₂,
+  rw [←hash_idx_of_to_lists_enum me₁ mab₁, ←hash_idx_of_to_lists_enum me₂ mab₂]
+end
+
+end to_lists
+
 def to_list (m : hashmap β) : list (sigma β) :=
-m.buckets.to_list.join
+m.to_lists.join
 
 section to_list
-variables {m : hashmap β} {i : ℕ} {l : list (sigma β)}
+variables {m : hashmap β} {i : ℕ} {l : list (sigma β)} {s : sigma β}
 
 section val
 variables {n : ℕ} {hash : α → fin n} {bs : array n (list (sigma β))}
@@ -109,32 +142,10 @@ ext_core hn
 theorem nodupkeys_of_mem_buckets (h : l ∈ m.buckets) : l.nodupkeys :=
 let ⟨i, e⟩ := h in e ▸ m.nodupkeys i
 
-theorem hash_idx_of_enum (he : (i, l) ∈ m.buckets.to_list.enum)
-  {s : sigma β} (hl : s ∈ l) : (m.hash s.1).1 = i :=
-have e₁ : ∃ p, m.buckets.read ⟨i, p⟩ = l := m.buckets.mem_to_list_enum.1 he,
-have e₂ : ∃ p, m.hash s.1 = ⟨i, p⟩ := e₁.imp (λ _ h, m.hash_idx $ h.symm ▸ hl),
-let ⟨_, h⟩ := e₂ in by rw h
-
-theorem disjoint_bucket_keys (m : hashmap β) :
-  pairwise disjoint (m.buckets.to_list.map keys) :=
-begin
-  rw [←enum_map_snd m.buckets.to_list, pairwise_map, pairwise_map],
-  refine pairwise.imp_of_mem _ ((pairwise_map _).mp (nodup_enum_map_fst _)),
-  rw prod.forall,
-  intros n₁ l₁,
-  rw prod.forall,
-  intros n₂ l₂,
-  intros me₁ me₂ e a mka₁ mka₂,
-  apply e,
-  cases exists_mem_of_mem_keys mka₁ with b₁ mab₁,
-  cases exists_mem_of_mem_keys mka₂ with b₂ mab₂,
-  rw [←hash_idx_of_enum me₁ mab₁, ←hash_idx_of_enum me₂ mab₂]
-end
-
 theorem nodupkeys_to_list (m : hashmap β) : m.to_list.nodupkeys :=
 nodupkeys_join.mpr $ and.intro
-  (λ l ml, by simp at ml; cases ml with i e; induction e; exact m.nodupkeys i)
-  m.disjoint_bucket_keys
+  (λ l ml, by simp [to_lists] at ml; cases ml with i e; induction e; exact m.nodupkeys i)
+  m.disjoint_to_lists_map_keys
 
 end to_list
 
@@ -184,10 +195,19 @@ def has_key (m : hashmap β) (a : α) : bool :=
 (m.lookup a).is_some
 
 section has_key
-variables {a : α} {b : β a} {m : hashmap β}
+variables {a : α} {s : sigma β} {m : hashmap β}
 
 theorem lookup_has_key : (m.lookup a).is_some = m.has_key a :=
 rfl
+
+theorem lookup_iff_mem_buckets : s.2 ∈ m.lookup s.1 ↔ ∃ l, l ∈ m.buckets ∧ s ∈ l :=
+calc s.2 ∈ m.lookup s.1 ↔ s ∈ m.buckets.read (m.hash s.1) :
+    by cases m with _ h _ ndk; simp [ndk (h s.1)]
+  ... ↔ m.buckets.read (m.hash s.1) ∈ m.buckets ∧ s ∈ m.buckets.read (m.hash s.1) :
+    ⟨λ h, ⟨array.read_mem _ _, h⟩, λ ⟨_, h⟩, h⟩
+  ... ↔ ∃ l, l ∈ m.buckets ∧ s ∈ l :
+    ⟨λ ⟨p, q⟩, ⟨_, p, q⟩, λ ⟨_, ⟨i, p⟩, q⟩,
+     by rw ←p at q; rw m.hash_idx q; exact ⟨array.read_mem m.buckets i, q⟩⟩
 
 -- TODO
 -- theorem mem_keys_iff_has_key : ∀ (m : hashmap β), a ∈ m.keys ↔ m.has_key a
@@ -198,7 +218,7 @@ instance : has_mem (sigma β) (hashmap β) :=
 ⟨λ s m, s.2 ∈ m.lookup s.1⟩
 
 section mem
-variables {a : α} {b : β a} {s : sigma β} {m : hashmap β}
+variables {s : sigma β} {m : hashmap β}
 
 section val
 variables {n : ℕ} {hash : α → fin n} {bs : array n (list (sigma β))}
@@ -210,8 +230,13 @@ mem_klookup_of_nodupkeys (ndk (hash s.1))
 
 end val
 
-theorem mem_lookup : s ∈ m ↔ s.2 ∈ m.lookup s.1 :=
+theorem mem_def : s ∈ m ↔ s.2 ∈ m.lookup s.1 :=
 iff.rfl
+
+@[simp] theorem mem_to_list : s ∈ m.to_list ↔ s ∈ m :=
+calc s ∈ m.to_list ↔ ∃ l, l ∈ m.to_lists ∧ s ∈ l : list.mem_join
+  ... ↔ ∃ l, l ∈ m.buckets ∧ s ∈ l : by simp only [mem_to_lists]
+  ... ↔ s ∈ m : lookup_iff_mem_buckets.symm
 
 end mem
 
