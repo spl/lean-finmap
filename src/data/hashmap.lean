@@ -148,10 +148,10 @@ variables {m : hashmap β} {i : ℕ} {l : list (sigma β)} {s : sigma β}
 
 section val
 variables {n : ℕ} {h : α → fin n} {bs : array n (list (sigma β))}
-  {ndk : ∀ (i : fin n), (bs.read i).nodupkeys}
-  {hi : ∀ {i : fin n} {s : sigma β}, s ∈ bs.read i → h s.1 = i}
+  {ndk : ∀ i, (bs.read i).nodupkeys}
+  {hi : ∀ i (s : sigma β), s ∈ bs.read i → h s.1 = i}
 
-@[simp] theorem to_list_val : (mk n h bs ndk @hi).to_list = bs.to_list.join :=
+@[simp] theorem to_list_val : (mk n h bs ndk hi).to_list = bs.to_list.join :=
 rfl
 
 theorem empty_to_list : empty m ↔ m.to_list = [] :=
@@ -183,11 +183,11 @@ variables {m : hashmap β}
 
 section val
 variables {n : ℕ} {h : α → fin n} {bs : array n (list (sigma β))}
-  {ndk : ∀ (i : fin n), (bs.read i).nodupkeys}
-  {hi : ∀ {i : fin n} {s : sigma β}, s ∈ bs.read i → h s.1 = i}
+  {ndk : ∀ i, (bs.read i).nodupkeys}
+  {hi : ∀ i (s : sigma β), s ∈ bs.read i → h s.1 = i}
 
 @[simp] theorem keys_val :
-  (mk n h bs ndk @hi).keys = bs.to_list.join.keys :=
+  (mk n h bs ndk hi).keys = bs.to_list.join.keys :=
 rfl
 
 end val
@@ -216,11 +216,11 @@ variables {a : α} {s : sigma β} {m : hashmap β}
 
 section val
 variables {n : ℕ} {h : α → fin n} {bs : array n (list (sigma β))}
-  {ndk : ∀ (i : fin n), (bs.read i).nodupkeys}
-  {hi : ∀ {i : fin n} {s : sigma β}, s ∈ bs.read i → h s.1 = i}
+  {ndk : ∀ i, (bs.read i).nodupkeys}
+  {hi : ∀ i (s : sigma β), s ∈ bs.read i → h s.1 = i}
 
 @[simp] theorem lookup_val :
-  lookup a (mk n h bs ndk @hi) = klookup a (bs.read (h a)) :=
+  lookup a (mk n h bs ndk hi) = klookup a (bs.read (h a)) :=
 rfl
 
 end val
@@ -249,10 +249,10 @@ variables {s : sigma β} {m : hashmap β}
 
 section val
 variables {n : ℕ} {h : α → fin n} {bs : array n (list (sigma β))}
-  {ndk : ∀ (i : fin n), (bs.read i).nodupkeys}
-  {hi : ∀ {i : fin n} {s : sigma β}, s ∈ bs.read i → h s.1 = i}
+  {ndk : ∀ i, (bs.read i).nodupkeys}
+  {hi : ∀ i (s : sigma β), s ∈ bs.read i → h s.1 = i}
 
-@[simp] theorem mem_val : s ∈ mk n h bs ndk @hi ↔ s ∈ bs.read (h s.1) :=
+@[simp] theorem mem_val : s ∈ mk n h bs ndk hi ↔ s ∈ bs.read (h s.1) :=
 mem_klookup_of_nodupkeys (ndk (h s.1))
 
 end val
@@ -278,11 +278,11 @@ variables {a : α} {m : hashmap β}
 
 section val
 variables {n : ℕ} {h : α → fin n} {bs : array n (list (sigma β))}
-  {ndk : ∀ (i : fin n), (bs.read i).nodupkeys}
-  {hi : ∀ {i : fin n} {s : sigma β}, s ∈ bs.read i → h s.1 = i}
+  {ndk : ∀ i, (bs.read i).nodupkeys}
+  {hi : ∀ i (s : sigma β), s ∈ bs.read i → h s.1 = i}
 
 @[simp] theorem has_key_val :
-  (mk n h bs ndk @hi).has_key a = (klookup a (bs.read (h a))).is_some :=
+  (mk n h bs ndk hi).has_key a = (klookup a (bs.read (h a))).is_some :=
 rfl
 
 end val
@@ -312,11 +312,11 @@ variables {a : α} {s : sigma β} {m : hashmap β}
 
 section val
 variables {n : ℕ} {h : α → fin n} {bs : array n (list (sigma β))}
-  {ndk : ∀ (i : fin n), (bs.read i).nodupkeys}
-  {hi : ∀ {i : fin n} {s : sigma β}, s ∈ bs.read i → h s.1 = i}
+  {ndk : ∀ i, (bs.read i).nodupkeys}
+  {hi : ∀ i (s : sigma β), s ∈ bs.read i → h s.1 = i}
 
 @[simp] theorem mem_erase_val :
-  s ∈ (mk n h bs ndk @hi).erase a ↔ s.1 ≠ a ∧ s ∈ bs.read (h s.1) :=
+  s ∈ (mk n h bs ndk hi).erase a ↔ s.1 ≠ a ∧ s ∈ bs.read (h s.1) :=
 begin
   unfold erase,
   by_cases e : h s.1 = h a,
@@ -357,11 +357,11 @@ variables {s t : sigma β} {m : hashmap β}
 
 section val
 variables {n : ℕ} {h : α → fin n} {bs : array n (list (sigma β))}
-  {ndk : ∀ (i : fin n), (bs.read i).nodupkeys}
-  {hi : ∀ {i : fin n} {s : sigma β}, s ∈ bs.read i → h s.1 = i}
+  {ndk : ∀ i, (bs.read i).nodupkeys}
+  {hi : ∀ i (s : sigma β), s ∈ bs.read i → h s.1 = i}
 
 @[simp] theorem mem_insert_val :
-  s ∈ insert t (mk n h bs ndk @hi) ↔ s = t ∨ s.1 ≠ t.1 ∧ s ∈ bs.read (h s.1) :=
+  s ∈ insert t (mk n h bs ndk hi) ↔ s = t ∨ s.1 ≠ t.1 ∧ s ∈ bs.read (h s.1) :=
 begin
   unfold insert has_insert.insert hashmap.insert,
   by_cases e : h s.1 = h t.1,
