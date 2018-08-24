@@ -3,18 +3,19 @@ import data.array.basic data.list.dict data.pnat
 universes u v
 
 /-- A hash map with an `n`-sized array of association list buckets, a hash
-function, and a proof that every bucket is correctly hashed. -/
+function, and proofs that the buckets have no duplicate keys and that every
+bucket is correctly hashed. -/
 structure hashmap {α : Type u} (β : α → Type v) :=
 /- Number of buckets -/
 (n : ℕ)
-/- Hash function -/
+/- Hash function from key to bucket index -/
 (hash : α → fin n)
 /- Array of association list buckets -/
 (buckets : array n (list (sigma β)))
 /- Each bucket has no duplicate keys. -/
 (nodupkeys : ∀ (i : fin n), (buckets.read i).nodupkeys)
-/- Each member of a bucket has a key hash equal to the index of that bucket. -/
-(hash_idx : ∀ {i : fin n} {s : sigma β}, s ∈ buckets.read i → hash s.1 = i)
+/- Each bucket member has a hash equal to the bucket index. -/
+(hash_index : ∀ {i : fin n} {s : sigma β}, s ∈ buckets.read i → hash s.1 = i)
 
 namespace hashmap
 open list
@@ -27,8 +28,7 @@ def default_n : ℕ :=
 def default_pn : ℕ+ :=
 ⟨default_n, dec_trivial⟩
 
-/-- Construct an empty hashmap with a given number of buckets (or the default)
-and a hash function -/
+/-- Construct an empty hashmap -/
 def mk_empty {α} (β : α → Type v) (n : ℕ := default_n) (f : α → fin n) : hashmap β :=
 ⟨n, f, mk_array n [], λ i, nodupkeys_nil, λ _ _ h, by cases h⟩
 
@@ -37,14 +37,14 @@ the number of buckets -/
 def hash_mod {α} (n : ℕ+ := default_pn) (f : α → ℕ) (a : α) : fin n.val :=
 ⟨f a % n.val, nat.mod_lt _ n.property⟩
 
-/-- Construct an empty hashmap with a given number of buckets (or the default)
-and a modulo hash function -/
+/-- Construct an empty nat-modulo hashmap -/
 def mk_empty_mod {α} (β : α → Type v) (n : ℕ+ := default_pn) (f : α → ℕ) : hashmap β :=
 mk_empty β n (hash_mod n f)
 
 section αβ
 variables {α : Type u} {β : α → Type v}
 
+/-- A hashmap is empty if all buckets are empty -/
 def empty (m : hashmap β) : Prop :=
 ∀ (i : fin m.n), m.buckets.read i = []
 
@@ -62,6 +62,7 @@ theorem empty_mk_empty_mod (β) (n : ℕ+) (f : α → ℕ) : empty (mk_empty_mo
 
 end empty
 
+/-- Bucket list of a hashmap -/
 def to_lists (m : hashmap β) : list (list (sigma β)) :=
 m.buckets.to_list
 
@@ -74,7 +75,7 @@ array.mem_to_list _ _
 theorem hash_idx_of_to_lists_enum (he : (i, l) ∈ m.to_lists.enum)
   {s : sigma β} (hl : s ∈ l) : (m.hash s.1).1 = i :=
 have e₁ : ∃ p, m.buckets.read ⟨i, p⟩ = l := m.buckets.mem_to_list_enum.1 he,
-have e₂ : ∃ p, m.hash s.1 = ⟨i, p⟩ := e₁.imp (λ _ h, m.hash_idx $ h.symm ▸ hl),
+have e₂ : ∃ p, m.hash s.1 = ⟨i, p⟩ := e₁.imp (λ _ h, m.hash_index $ h.symm ▸ hl),
 let ⟨_, h⟩ := e₂ in by rw h
 
 theorem disjoint_to_lists_map_keys (m : hashmap β) :
@@ -95,6 +96,7 @@ end
 
 end to_lists
 
+/-- Association list of a hashmap -/
 def to_list (m : hashmap β) : list (sigma β) :=
 m.to_lists.join
 
@@ -104,9 +106,9 @@ variables {m : hashmap β} {i : ℕ} {l : list (sigma β)} {s : sigma β}
 section val
 variables {n : ℕ} {hash : α → fin n} {bs : array n (list (sigma β))}
   {ndk : ∀ (i : fin n), (bs.read i).nodupkeys}
-  {hash_idx : ∀ {i : fin n} {s : sigma β}, s ∈ bs.read i → hash s.1 = i}
+  {hash_index : ∀ {i : fin n} {s : sigma β}, s ∈ bs.read i → hash s.1 = i}
 
-@[simp] theorem to_list_val : (mk n hash bs ndk @hash_idx).to_list = bs.to_list.join :=
+@[simp] theorem to_list_val : (mk n hash bs ndk @hash_index).to_list = bs.to_list.join :=
 rfl
 
 theorem empty_to_list : empty m ↔ m.to_list = [] :=
@@ -149,9 +151,11 @@ nodupkeys_join.mpr $ and.intro
 
 end to_list
 
+/-- Left-fold of a hashmap -/
 def foldl {γ : Type*} (m : hashmap β) (f : γ → sigma β → γ) (d : γ) : γ :=
 m.buckets.foldl d (λ b r, b.foldl f r)
 
+/-- List of keys in a hashmap -/
 def keys (m : hashmap β) : list α :=
 m.to_list.keys
 
@@ -169,6 +173,7 @@ instance [has_repr α] [∀ a, has_repr (β a)] : has_repr (hashmap β) :=
 section decidable_eq_α
 variables [decidable_eq α]
 
+/-- Look up a possible value in a hashmap given a key -/
 def lookup (a : α) (m : hashmap β) : option (β a) :=
 klookup a $ m.buckets.read $ m.hash a
 
@@ -178,10 +183,10 @@ variables {a : α} {m : hashmap β}
 section val
 variables {n : ℕ} {hash : α → fin n} {bs : array n (list (sigma β))}
   {ndk : ∀ (i : fin n), (bs.read i).nodupkeys}
-  {hash_idx : ∀ {i : fin n} {s : sigma β}, s ∈ bs.read i → hash s.1 = i}
+  {hash_index : ∀ {i : fin n} {s : sigma β}, s ∈ bs.read i → hash s.1 = i}
 
 @[simp] theorem lookup_val :
-  lookup a (mk n hash bs ndk @hash_idx) = klookup a (bs.read (hash a)) :=
+  lookup a (mk n hash bs ndk @hash_index) = klookup a (bs.read (hash a)) :=
 rfl
 
 end val
@@ -191,6 +196,7 @@ by simp [lookup, h (m.hash a)]
 
 end lookup
 
+/-- Test for the presence of a key in a hashmap -/
 def has_key (m : hashmap β) (a : α) : bool :=
 (m.lookup a).is_some
 
@@ -207,7 +213,7 @@ calc s.2 ∈ m.lookup s.1 ↔ s ∈ m.buckets.read (m.hash s.1) :
     ⟨λ h, ⟨array.read_mem _ _, h⟩, λ ⟨_, h⟩, h⟩
   ... ↔ ∃ l, l ∈ m.buckets ∧ s ∈ l :
     ⟨λ ⟨p, q⟩, ⟨_, p, q⟩, λ ⟨_, ⟨i, p⟩, q⟩,
-     by rw ←p at q; rw m.hash_idx q; exact ⟨array.read_mem m.buckets i, q⟩⟩
+     by rw ←p at q; rw m.hash_index q; exact ⟨array.read_mem m.buckets i, q⟩⟩
 
 -- TODO
 -- theorem mem_keys_iff_has_key : ∀ (m : hashmap β), a ∈ m.keys ↔ m.has_key a
@@ -223,9 +229,9 @@ variables {s : sigma β} {m : hashmap β}
 section val
 variables {n : ℕ} {hash : α → fin n} {bs : array n (list (sigma β))}
   {ndk : ∀ (i : fin n), (bs.read i).nodupkeys}
-  {hash_idx : ∀ {i : fin n} {s : sigma β}, s ∈ bs.read i → hash s.1 = i}
+  {hash_index : ∀ {i : fin n} {s : sigma β}, s ∈ bs.read i → hash s.1 = i}
 
-@[simp] theorem mem_val : s ∈ mk n hash bs ndk @hash_idx ↔ s ∈ bs.read (hash s.1) :=
+@[simp] theorem mem_val : s ∈ mk n hash bs ndk @hash_index ↔ s ∈ bs.read (hash s.1) :=
 mem_klookup_of_nodupkeys (ndk (hash s.1))
 
 end val
@@ -240,11 +246,12 @@ calc s ∈ m.to_list ↔ ∃ l, l ∈ m.to_lists ∧ s ∈ l : mem_join
 
 end mem
 
+/-- Erase a hashmap entry with the given key -/
 def erase (m : hashmap β) (a : α) : hashmap β :=
 { buckets := m.buckets.modify (m.hash a) (kerase a),
   nodupkeys := λ i,
     by by_cases e : m.hash a = i; simp [e, m.nodupkeys i],
-  hash_idx := λ i s h, m.hash_idx $
+  hash_index := λ i s h, m.hash_index $
     by by_cases e : m.hash a = i; simp [e] at h;
        [exact mem_of_mem_kerase h, exact h],
   ..m }
@@ -255,10 +262,10 @@ variables {a : α} {s : sigma β} {m : hashmap β}
 section val
 variables {n : ℕ} {hash : α → fin n} {bs : array n (list (sigma β))}
   {ndk : ∀ (i : fin n), (bs.read i).nodupkeys}
-  {hash_idx : ∀ {i : fin n} {s : sigma β}, s ∈ bs.read i → hash s.1 = i}
+  {hash_index : ∀ {i : fin n} {s : sigma β}, s ∈ bs.read i → hash s.1 = i}
 
 @[simp] theorem mem_erase_val :
-  s ∈ (mk n hash bs ndk @hash_idx).erase a ↔ s.1 ≠ a ∧ s ∈ bs.read (hash s.1) :=
+  s ∈ (mk n hash bs ndk @hash_index).erase a ↔ s.1 ≠ a ∧ s ∈ bs.read (hash s.1) :=
 begin
   unfold erase,
   by_cases h : hash s.1 = hash a,
@@ -276,17 +283,18 @@ by cases m; simp
 
 end erase
 
+/-- Insert a new entry in a hashmap -/
 protected def insert (s : sigma β) (m : hashmap β) : hashmap β :=
 { buckets := m.buckets.modify (m.hash s.1) (kinsert s),
   nodupkeys := λ i,
     by by_cases e : m.hash s.1 = i; simp [e, m.nodupkeys i],
-  hash_idx := λ i s' h,
+  hash_index := λ i s' h,
   begin
     by_cases e : m.hash s.1 = i; simp [e] at h,
     { cases h with h h,
       { induction h, exact e },
-      { exact m.hash_idx (mem_of_mem_kerase h) } },
-    { exact m.hash_idx h }
+      { exact m.hash_index (mem_of_mem_kerase h) } },
+    { exact m.hash_index h }
   end,
   ..m }
 
@@ -299,10 +307,10 @@ variables {s t : sigma β} {m : hashmap β}
 section val
 variables {n : ℕ} {hash : α → fin n} {bs : array n (list (sigma β))}
   {ndk : ∀ (i : fin n), (bs.read i).nodupkeys}
-  {hash_idx : ∀ {i : fin n} {s : sigma β}, s ∈ bs.read i → hash s.1 = i}
+  {hash_index : ∀ {i : fin n} {s : sigma β}, s ∈ bs.read i → hash s.1 = i}
 
 @[simp] theorem mem_insert_val :
-  s ∈ insert t (mk n hash bs ndk @hash_idx) ↔ s = t ∨ s.1 ≠ t.1 ∧ s ∈ bs.read (hash s.1) :=
+  s ∈ insert t (mk n hash bs ndk @hash_index) ↔ s = t ∨ s.1 ≠ t.1 ∧ s ∈ bs.read (hash s.1) :=
 begin
   unfold insert has_insert.insert hashmap.insert,
   by_cases h : hash s.1 = hash t.1,
@@ -317,12 +325,15 @@ by cases m; simp
 
 end insert
 
+/-- Insert a list of entries in a hashmap -/
 def insert_list (l : list (sigma β)) (m : hashmap β) : hashmap β :=
 l.foldl (flip insert) m
 
+/-- Construct a hashmap from an association list -/
 def of_list (n : ℕ := default_n) (f : α → fin n) (l : list (sigma β)) : hashmap β :=
 insert_list l $ mk_empty _ n f
 
+/-- Construct a nat-modulo hashmap from an association list -/
 def of_list_mod (n : ℕ+ := default_pn) (f : α → ℕ) (l : list (sigma β)) : hashmap β :=
 insert_list l $ mk_empty_mod _ n f
 
