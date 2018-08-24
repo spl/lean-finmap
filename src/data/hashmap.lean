@@ -237,7 +237,7 @@ def has_key (m : hashmap β) (a : α) : bool :=
 section has_key
 variables {a : α} {m : hashmap β}
 
-theorem lookup_has_key : (m.lookup a).is_some = m.has_key a :=
+theorem has_key_def : m.has_key a = (m.lookup a).is_some :=
 rfl
 
 -- TODO
@@ -278,11 +278,9 @@ end mem
 /-- Erase a hashmap entry with the given key -/
 def erase (m : hashmap β) (a : α) : hashmap β :=
 { buckets := m.buckets.modify (m.hash a) (kerase a),
-  nodupkeys := λ i,
-    by by_cases e : m.hash a = i; simp [e, m.nodupkeys i],
+  nodupkeys := λ i, by by_cases e : m.hash a = i; simp [e, m.nodupkeys i],
   hash_index := λ i s h, m.hash_index $
-    by by_cases e : m.hash a = i; simp [e] at h;
-       [exact mem_of_mem_kerase h, exact h],
+    by by_cases e : m.hash a = i; simp [e] at h; [exact mem_of_mem_kerase h, exact h],
   ..m }
 
 section erase
@@ -317,10 +315,8 @@ end erase
 /-- Insert a new entry in a hashmap -/
 protected def insert (s : sigma β) (m : hashmap β) : hashmap β :=
 { buckets := m.buckets.modify (m.hash s.1) (kinsert s),
-  nodupkeys := λ i,
-    by by_cases e : m.hash s.1 = i; simp [e, m.nodupkeys i],
-  hash_index := λ i s' h,
-  begin
+  nodupkeys := λ i, by by_cases e : m.hash s.1 = i; simp [e, m.nodupkeys i],
+  hash_index := λ i s' h, begin
     by_cases e : m.hash s.1 = i; simp [e] at h,
     { cases h with h h,
       { induction h, exact e },
