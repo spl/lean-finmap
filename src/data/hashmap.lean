@@ -20,6 +20,8 @@ structure hashmap {α : Type u} (β : α → Type v) :=
 namespace hashmap
 open list
 
+/- default number of buckets -/
+
 /-- Default number of buckets (8) -/
 def default_n : ℕ :=
 8
@@ -27,6 +29,8 @@ def default_n : ℕ :=
 /-- Default positive number of buckets (default_n) -/
 def default_pn : ℕ+ :=
 ⟨default_n, dec_trivial⟩
+
+/- constructing empty hashmaps -/
 
 /-- Construct an empty hashmap -/
 def mk_empty {α} (β : α → Type v) (n : ℕ := default_n) (f : α → fin n) : hashmap β :=
@@ -43,6 +47,41 @@ mk_empty β n (hash_mod n f)
 
 section αβ
 variables {α : Type u} {β : α → Type v}
+
+/- extensionality -/
+
+theorem ext_core {m₁ m₂ : hashmap β} :
+  m₁.n = m₂.n →
+  m₁.hash == m₂.hash →
+  m₁.buckets == m₂.buckets →
+  m₁ = m₂ :=
+begin
+  cases m₁,
+  cases m₂,
+  dsimp,
+  intros hn hh hb,
+  congr,
+  repeat { assumption },
+  { apply proof_irrel_heq, substs hn hb, refl },
+  { apply proof_irrel_heq, substs hn hh hb, refl }
+end
+
+theorem ext {m₁ m₂ : hashmap β}
+  (hn : m₁.n = m₂.n)
+  (hh : ∀ (a : α), (eq.rec_on hn (m₁.hash a) : fin m₂.n) = m₂.hash a)
+  (hb : ∀ (i : fin m₁.n), m₁.buckets.read i = m₂.buckets.read (eq.rec_on hn i)) :
+  m₁ = m₂ :=
+ext_core hn
+  (function.hfunext rfl (λ a₁ a₂ p, heq_of_eq_rec_left hn (by rw eq_of_heq p; apply hh)))
+  (by cases m₁; cases m₂; dsimp at hn; subst hn; exact heq_of_eq (array.ext hb))
+
+/- nodupkeys -/
+
+theorem nodupkeys_of_mem_buckets {l : list (sigma β)} {m : hashmap β} (h : l ∈ m.buckets) :
+  l.nodupkeys :=
+let ⟨i, e⟩ := h in e ▸ m.nodupkeys i
+
+/- empty -/
 
 /-- A hashmap is empty if all buckets are empty -/
 def empty (m : hashmap β) : Prop :=
@@ -61,6 +100,8 @@ theorem empty_mk_empty_mod (β) (n : ℕ+) (f : α → ℕ) : empty (mk_empty_mo
 λ i, by cases (h.rec_on i : fin 0).is_lt
 
 end empty
+
+/- to_lists -/
 
 /-- Bucket list of a hashmap -/
 def to_lists (m : hashmap β) : list (list (sigma β)) :=
@@ -96,6 +137,8 @@ end
 
 end to_lists
 
+/- to_list -/
+
 /-- Association list of a hashmap -/
 def to_list (m : hashmap β) : list (sigma β) :=
 m.to_lists.join
@@ -116,34 +159,6 @@ array.to_list_join_nil.symm
 
 end val
 
-theorem ext_core {m₁ m₂ : hashmap β} :
-  m₁.n = m₂.n →
-  m₁.hash == m₂.hash →
-  m₁.buckets == m₂.buckets →
-  m₁ = m₂ :=
-begin
-  cases m₁,
-  cases m₂,
-  dsimp,
-  intros hn hh hb,
-  congr,
-  repeat { assumption },
-  { apply proof_irrel_heq, substs hn hb, refl },
-  { apply proof_irrel_heq, substs hn hh hb, refl }
-end
-
-theorem ext {m₁ m₂ : hashmap β}
-  (hn : m₁.n = m₂.n)
-  (hh : ∀ (a : α), (eq.rec_on hn (m₁.hash a) : fin m₂.n) = m₂.hash a)
-  (hb : ∀ (i : fin m₁.n), m₁.buckets.read i = m₂.buckets.read (eq.rec_on hn i)) :
-  m₁ = m₂ :=
-ext_core hn
-  (function.hfunext rfl (λ a₁ a₂ p, heq_of_eq_rec_left hn (by rw eq_of_heq p; apply hh)))
-  (by cases m₁; cases m₂; dsimp at hn; subst hn; exact heq_of_eq (array.ext hb))
-
-theorem nodupkeys_of_mem_buckets (h : l ∈ m.buckets) : l.nodupkeys :=
-let ⟨i, e⟩ := h in e ▸ m.nodupkeys i
-
 theorem nodupkeys_to_list (m : hashmap β) : m.to_list.nodupkeys :=
 nodupkeys_join.mpr $ and.intro
   (λ l ml, by simp [to_lists] at ml; cases ml with i e; induction e; exact m.nodupkeys i)
@@ -151,9 +166,13 @@ nodupkeys_join.mpr $ and.intro
 
 end to_list
 
+/- foldl -/
+
 /-- Left-fold of a hashmap -/
 def foldl {γ : Type*} (m : hashmap β) (f : γ → sigma β → γ) (d : γ) : γ :=
 m.buckets.foldl d (λ b r, b.foldl f r)
+
+/- keys -/
 
 /-- List of keys in a hashmap -/
 def keys (m : hashmap β) : list α :=
@@ -167,11 +186,15 @@ nodupkeys_iff.mpr m.nodupkeys_to_list
 
 end keys
 
+/- has_repr -/
+
 instance [has_repr α] [∀ a, has_repr (β a)] : has_repr (hashmap β) :=
 ⟨λ m, "{" ++ string.intercalate ", " (m.to_list.map repr) ++ "}"⟩
 
 section decidable_eq_α
 variables [decidable_eq α]
+
+/- lookup -/
 
 /-- Look up a possible value in a hashmap given a key -/
 def lookup (a : α) (m : hashmap β) : option (β a) :=
@@ -205,6 +228,8 @@ calc s.2 ∈ m.lookup s.1 ↔ s ∈ m.buckets.read (m.hash s.1) :
 
 end lookup
 
+/- has_key -/
+
 /-- Test for the presence of a key in a hashmap -/
 def has_key (m : hashmap β) (a : α) : bool :=
 (m.lookup a).is_some
@@ -219,6 +244,8 @@ rfl
 -- theorem mem_keys_iff_has_key : ∀ (m : hashmap β), a ∈ m.keys ↔ m.has_key a
 
 end has_key
+
+/- mem -/
 
 instance : has_mem (sigma β) (hashmap β) :=
 ⟨λ s m, s.2 ∈ m.lookup s.1⟩
@@ -245,6 +272,8 @@ calc s ∈ m.to_list ↔ ∃ l, l ∈ m.to_lists ∧ s ∈ l : mem_join
   ... ↔ s ∈ m : lookup_iff_mem_buckets.symm
 
 end mem
+
+/- erase -/
 
 /-- Erase a hashmap entry with the given key -/
 def erase (m : hashmap β) (a : α) : hashmap β :=
@@ -282,6 +311,8 @@ by simp [erase, lookup, m.nodupkeys (m.hash a)]
 by cases m; simp
 
 end erase
+
+/- insert -/
 
 /-- Insert a new entry in a hashmap -/
 protected def insert (s : sigma β) (m : hashmap β) : hashmap β :=
