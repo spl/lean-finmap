@@ -15,6 +15,8 @@ open multiset
 section αβ
 variables {α : Type u} {β : α → Type v}
 
+/- equality -/
+
 theorem eq_of_veq : ∀ {f g : finmap α β}, f.val = g.val → f = g
 | ⟨s, _⟩ ⟨t, _⟩ h := by congr; exact h
 
@@ -23,6 +25,8 @@ theorem eq_of_veq : ∀ {f g : finmap α β}, f.val = g.val → f = g
 
 instance has_decidable_eq [decidable_eq α] [∀ a, decidable_eq (β a)] : decidable_eq (finmap α β)
 | f g := decidable_of_iff _ val_inj
+
+/- recursors -/
 
 section rec
 open function
