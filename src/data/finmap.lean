@@ -337,8 +337,17 @@ end insert
 
 section lookup
 
+/-- Look up a key in a finmap to find the value, if it exists -/
 def lookup (a : α) (f : finmap α β) : option (β a) :=
 klookup a f.nodupkeys
+
+/-- Treat a finmap as the function `∀ a, option (β a)` -/
+def to_fun (f : finmap α β) (a : α) : option (β a) :=
+f.lookup a
+
+/-- Treat a finmap as the partial function `∀ a, roption (β a)` -/
+def to_pfun (f : finmap α β) (a : α) : roption (β a) :=
+roption.of_option (f.to_fun a)
 
 theorem lookup_empty (β : α → Type v) (a) : lookup a (∅ : finmap α β) = none :=
 rfl

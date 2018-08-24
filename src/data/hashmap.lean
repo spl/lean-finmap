@@ -207,7 +207,7 @@ variables [decidable_eq α]
 
 /- lookup -/
 
-/-- Look up a possible value in a hashmap given a key -/
+/-- Look up a key in a hashmap to find the value, if it exists -/
 def lookup (a : α) (m : hashmap β) : option (β a) :=
 klookup a $ m.buckets.read $ m.hash a
 
