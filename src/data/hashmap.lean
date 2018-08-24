@@ -178,7 +178,7 @@ def lookup (a : α) (m : hashmap β) : option (β a) :=
 klookup a $ m.buckets.read $ m.hash a
 
 section lookup
-variables {a : α} {m : hashmap β}
+variables {a : α} {s : sigma β} {m : hashmap β}
 
 section val
 variables {n : ℕ} {hash : α → fin n} {bs : array n (list (sigma β))}
@@ -194,18 +194,6 @@ end val
 @[simp] theorem lookup_empty (a : α) (h : empty m) : lookup a m = none :=
 by simp [lookup, h (m.hash a)]
 
-end lookup
-
-/-- Test for the presence of a key in a hashmap -/
-def has_key (m : hashmap β) (a : α) : bool :=
-(m.lookup a).is_some
-
-section has_key
-variables {a : α} {s : sigma β} {m : hashmap β}
-
-theorem lookup_has_key : (m.lookup a).is_some = m.has_key a :=
-rfl
-
 theorem lookup_iff_mem_buckets : s.2 ∈ m.lookup s.1 ↔ ∃ l, l ∈ m.buckets ∧ s ∈ l :=
 calc s.2 ∈ m.lookup s.1 ↔ s ∈ m.buckets.read (m.hash s.1) :
     by cases m with _ h _ ndk; simp [ndk (h s.1)]
@@ -214,6 +202,18 @@ calc s.2 ∈ m.lookup s.1 ↔ s ∈ m.buckets.read (m.hash s.1) :
   ... ↔ ∃ l, l ∈ m.buckets ∧ s ∈ l :
     ⟨λ ⟨p, q⟩, ⟨_, p, q⟩, λ ⟨_, ⟨i, p⟩, q⟩,
      by rw ←p at q; rw m.hash_index q; exact ⟨array.read_mem m.buckets i, q⟩⟩
+
+end lookup
+
+/-- Test for the presence of a key in a hashmap -/
+def has_key (m : hashmap β) (a : α) : bool :=
+(m.lookup a).is_some
+
+section has_key
+variables {a : α} {m : hashmap β}
+
+theorem lookup_has_key : (m.lookup a).is_some = m.has_key a :=
+rfl
 
 -- TODO
 -- theorem mem_keys_iff_has_key : ∀ (m : hashmap β), a ∈ m.keys ↔ m.has_key a
