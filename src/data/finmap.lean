@@ -95,13 +95,29 @@ variables {s : sigma β} {f : finmap α β}
 def to_set (f : finmap α β) : set (sigma β) :=
 {x | x ∈ f}
 
-instance : has_lift (finmap α β) (set (sigma β)) :=
+instance has_lift_set : has_lift (finmap α β) (set (sigma β)) :=
 ⟨to_set⟩
 
-@[simp] lemma mem_coe : s ∈ (↑f : set (sigma β)) ↔ s ∈ f :=
+@[simp] theorem mem_set_coe : s ∈ (↑f : set (sigma β)) ↔ s ∈ f :=
 iff.rfl
 
 end set
+
+/- finset coercion -/
+
+section finset
+variables {s : sigma β} {f : finmap α β}
+
+def to_finset (f : finmap α β) : finset (sigma β) :=
+⟨f.val, nodup_of_nodupkeys f.nodupkeys⟩
+
+instance has_lift_finset : has_lift (finmap α β) (finset (sigma β)) :=
+⟨to_finset⟩
+
+@[simp] theorem mem_finset_coe : s ∈ (↑f : finset (sigma β)) ↔ s ∈ f :=
+iff.rfl
+
+end finset
 
 /- extensionality -/
 
@@ -145,7 +161,10 @@ ext' $ λ a, ⟨@H₁ a, @H₂ a⟩
 theorem subset_iff : f ⊆ g ↔ ∀ ⦃x⦄, x ∈ f → x ∈ g :=
 iff.rfl
 
-@[simp] theorem coe_subset : (↑f : set (sigma β)) ⊆ ↑g ↔ f ⊆ g :=
+@[simp] theorem coe_subset_set : (↑f : set (sigma β)) ⊆ ↑g ↔ f ⊆ g :=
+iff.rfl
+
+@[simp] theorem coe_subset_finset : (↑f : finset (sigma β)) ⊆ ↑g ↔ f ⊆ g :=
 iff.rfl
 
 @[simp] theorem val_le_iff : f.val ≤ g.val ↔ f ⊆ g :=
@@ -204,8 +223,11 @@ subset_zero.trans val_eq_zero
 theorem exists_mem_of_ne_empty (h : f ≠ ∅) : ∃ s : sigma β, s ∈ f :=
 exists_mem_of_ne_zero (mt val_eq_zero.mp h)
 
-@[simp] lemma coe_empty : ↑(∅ : finmap α β) = (∅ : set (sigma β)) :=
+@[simp] theorem coe_empty_set : ↑(∅ : finmap α β) = (∅ : set (sigma β)) :=
 by simp [set.ext_iff]
+
+@[simp] theorem coe_empty_finset : ↑(∅ : finmap α β) = (∅ : finset (sigma β)) :=
+by simp [finset.ext]
 
 end empty
 
@@ -234,8 +256,11 @@ theorem singleton_inj : singleton s₁ = singleton s₂ ↔ s₁ = s₂ :=
 @[simp] theorem singleton_ne_empty (s : sigma β) : singleton s ≠ ∅ :=
 ne_empty_of_mem (mem_singleton_self _)
 
-@[simp] lemma coe_singleton (s : sigma β) : ↑(singleton s) = ({s} : set (sigma β)) :=
+@[simp] theorem coe_singleton_set (s : sigma β) : ↑(singleton s) = ({s} : set (sigma β)) :=
 by simp [set.ext_iff]
+
+@[simp] theorem coe_singleton_finset (s : sigma β) : ↑(singleton s) = finset.singleton s :=
+by simp [finset.ext]
 
 end singleton
 
