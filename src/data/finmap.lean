@@ -411,6 +411,12 @@ instance : has_union (finmap α β) :=
 @[simp] theorem union_val : (f ∪ g).val = kunion f.nodupkeys g.nodupkeys :=
 rfl
 
+@[simp] theorem empty_union (f : finmap α β) : ∅ ∪ f = f :=
+eq_of_veq $ by simp [zero_kunion f.nodupkeys]
+
+@[simp] theorem union_empty (f : finmap α β) : f ∪ ∅ = f :=
+eq_of_veq $ kunion_zero f.nodupkeys
+
 theorem mem_of_mem_union : s ∈ f ∪ g → s ∈ f ∨ s ∈ g :=
 mem_of_mem_kunion f.nodupkeys g.nodupkeys
 
