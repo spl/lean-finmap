@@ -281,11 +281,17 @@ rfl
 @[simp] theorem keys_singleton : keys (singleton s) = finset.singleton s.1 :=
 rfl
 
-@[simp] theorem mem_keys_singleton : a ∈ keys (singleton s) ↔ a = s.1 :=
+theorem mem_keys_of_mem : s ∈ f → s.1 ∈ f.keys :=
+mem_keys_of_mem
+
+theorem exists_mem_of_mem_keys : a ∈ f.keys → ∃ (b : β a), sigma.mk a b ∈ f :=
+exists_mem_of_mem_keys
+
+@[simp] theorem mem_keys_singleton : a ∈ (singleton s).keys ↔ a = s.1 :=
 by simp
 
 @[simp] theorem mem_insert_keys [decidable_eq α] :
-  a₁ ∈ insert a₂ (keys f) ↔ a₁ = a₂ ∨ a₁ ∈ keys f :=
+  a₁ ∈ insert a₂ f.keys ↔ a₁ = a₂ ∨ a₁ ∈ f.keys :=
 by simp
 
 end keys
@@ -310,7 +316,7 @@ mem_kerase f.nodupkeys
 theorem not_mem_erase (a : α) (b : β a) (f : finmap α β) : sigma.mk a b ∉ f.erase a :=
 by simp
 
-@[simp] theorem mem_keys_erase : a₁ ∈ keys (f.erase a₂) ↔ a₁ ≠ a₂ ∧ a₁ ∈ keys f :=
+@[simp] theorem mem_keys_erase : a₁ ∈ (f.erase a₂).keys ↔ a₁ ≠ a₂ ∧ a₁ ∈ f.keys :=
 by simp [keys]
 
 @[simp] theorem erase_empty (β : α → Type v) (a) : erase ∅ a = (∅ : finmap α β) :=
@@ -350,10 +356,10 @@ rfl
   s₁ ∈ insert s₂ f ↔ s₁ = s₂ ∨ s₁ ∈ f.erase s₂.1 :=
 mem_kinsert f.nodupkeys
 
-@[simp] theorem mem_keys_insert : a ∈ keys (insert s f) ↔ a = s.1 ∨ a ∈ keys f :=
+@[simp] theorem mem_keys_insert : a ∈ (insert s f).keys ↔ a = s.1 ∨ a ∈ f.keys :=
 by simp [keys]
 
-@[simp] theorem insert_keys : keys (insert s f) = insert s.1 (keys f) :=
+@[simp] theorem insert_keys : (insert s f).keys = insert s.1 f.keys :=
 finset.ext' $ by simp
 
 end insert
@@ -394,7 +400,7 @@ end replace
 /- union -/
 
 section union
-variables {a : α} {s : sigma β} {f g : finmap α β}
+variables {a : α} {s : sigma β} {f g h : finmap α β}
 
 protected def union (f : finmap α β) (g : finmap α β) : finmap α β :=
 ⟨kunion f.nodupkeys g.nodupkeys, nodupkeys_kunion f.nodupkeys g.nodupkeys⟩
@@ -405,10 +411,26 @@ instance : has_union (finmap α β) :=
 @[simp] theorem union_val : (f ∪ g).val = kunion f.nodupkeys g.nodupkeys :=
 rfl
 
+theorem mem_of_mem_union : s ∈ f ∪ g → s ∈ f ∨ s ∈ g :=
+mem_of_mem_kunion f.nodupkeys g.nodupkeys
+
+theorem mem_union_left (g : finmap α β) : s ∈ f → s ∈ f ∪ g :=
+mem_kunion_left f.nodupkeys g.nodupkeys
+
+theorem mem_union_right : s.1 ∉ f.keys → s ∈ g → s ∈ f ∪ g :=
+mem_kunion_right f.nodupkeys g.nodupkeys
+
+theorem mem_union_middle (dk : disjoint (f ∪ g).keys h.keys) (p : s ∈ f ∪ h) :
+  s ∈ f ∪ g ∪ h :=
+match mem_of_mem_union p with
+| or.inl p := mem_union_left _ (mem_union_left _ p)
+| or.inr p := mem_union_right (finset.disjoint_right.mp dk (mem_keys_of_mem p)) p
+end
+
 @[simp] theorem mem_union (dk : disjoint f.keys g.keys) : s ∈ f ∪ g ↔ s ∈ f ∨ s ∈ g :=
 mem_kunion f.nodupkeys g.nodupkeys (finset.disjoint_val.mp dk)
 
-@[simp] theorem mem_keys_union : a ∈ keys (f ∪ g) ↔ a ∈ keys f ∨ a ∈ keys g :=
+@[simp] theorem mem_keys_union : a ∈ (f ∪ g).keys ↔ a ∈ f.keys ∨ a ∈ g.keys :=
 mem_keys_kunion f.nodupkeys g.nodupkeys
 
 @[simp] theorem union_keys : (f ∪ g).keys = f.keys ∪ g.keys :=

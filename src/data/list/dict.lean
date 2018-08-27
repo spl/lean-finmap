@@ -692,6 +692,13 @@ by induction l₁ generalizing l₂; simp at h; cases h; simp *
 theorem mem_kunion_right (h₁ : s.1 ∉ l₁.keys) (h₂ : s ∈ l₂) : s ∈ l₁.kunion l₂ :=
 by induction l₁ generalizing l₂; simp at h₁; cases h₁; simp *
 
+theorem mem_kunion_middle (dk : disjoint (l₁.kunion l₂).keys l₃.keys) (h : s ∈ l₁.kunion l₃) :
+  s ∈ (l₁.kunion l₂).kunion l₃ :=
+match mem_of_mem_kunion h with
+| or.inl h := mem_kunion_left _ (mem_kunion_left _ h)
+| or.inr h := mem_kunion_right (disjoint_right.mp dk (mem_keys_of_mem h)) h
+end
+
 theorem mem_kunion_of_disjoint_keys (dk : disjoint l₁.keys l₂.keys) (h : s ∈ l₁ ∨ s ∈ l₂) :
   s ∈ l₁.kunion l₂ :=
 begin
