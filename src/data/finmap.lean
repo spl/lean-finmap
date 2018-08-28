@@ -429,13 +429,6 @@ mem_kunion_left f.nodupkeys g.nodupkeys
 theorem mem_union_right : s.1 ∉ f.keys → s ∈ g → s ∈ f ∪ g :=
 mem_kunion_right f.nodupkeys g.nodupkeys
 
-theorem mem_union_middle (dk : disjoint (f ∪ g).keys h.keys) (p : s ∈ f ∪ h) :
-  s ∈ f ∪ g ∪ h :=
-match mem_of_mem_union p with
-| or.inl p := mem_union_left _ (mem_union_left _ p)
-| or.inr p := mem_union_right (finset.disjoint_right.mp dk (mem_keys_of_mem p)) p
-end
-
 @[simp] theorem mem_union (dk : disjoint f.keys g.keys) : s ∈ f ∪ g ↔ s ∈ f ∨ s ∈ g :=
 mem_kunion f.nodupkeys g.nodupkeys (finset.disjoint_val.mp dk)
 
@@ -444,6 +437,22 @@ mem_keys_kunion f.nodupkeys g.nodupkeys
 
 @[simp] theorem union_keys : (f ∪ g).keys = f.keys ∪ g.keys :=
 finset.ext' $ by simp
+
+theorem disjoint_keys_union_left :
+  disjoint (f ∪ g).keys h.keys ↔ disjoint f.keys h.keys ∧ disjoint g.keys h.keys :=
+by simp
+
+theorem disjoint_keys_union_right :
+  disjoint f.keys (g ∪ h).keys ↔ disjoint f.keys g.keys ∧ disjoint f.keys h.keys :=
+by simp
+
+theorem mem_union_middle (dfh : disjoint f.keys h.keys) (dgh : disjoint g.keys h.keys)
+  (p : s ∈ f ∪ h) : s ∈ f ∪ g ∪ h :=
+match mem_of_mem_union p with
+| or.inl p := mem_union_left _ (mem_union_left _ p)
+| or.inr p := mem_union_right
+  (finset.disjoint_right.mp (disjoint_keys_union_left.mpr ⟨dfh, dgh⟩) (mem_keys_of_mem p)) p
+end
 
 end union
 
