@@ -417,6 +417,9 @@ eq_of_veq $ by simp [zero_kunion f.nodupkeys]
 @[simp] theorem union_empty (f : finmap α β) : f ∪ ∅ = f :=
 eq_of_veq $ kunion_zero f.nodupkeys
 
+@[simp] theorem insert_union : insert s f ∪ g = insert s (f ∪ g) :=
+eq_of_veq $ kinsert_kunion f.nodupkeys g.nodupkeys
+
 theorem mem_of_mem_union : s ∈ f ∪ g → s ∈ f ∨ s ∈ g :=
 mem_of_mem_kunion f.nodupkeys g.nodupkeys
 

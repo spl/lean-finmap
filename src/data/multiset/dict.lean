@@ -196,11 +196,19 @@ local infixr ` k∪ `:67 := kunion
    d₁ k∪ d₂ = (l₁.kunion l₂ : multiset (sigma β)) :=
 rfl
 
+@[simp] theorem nodupkeys_kunion : ∀ (d₁ : m₁.nodupkeys) (d₂ : m₂.nodupkeys),
+  (d₁ k∪ d₂).nodupkeys :=
+quotient.induction_on₂ m₁ m₂ $ λ _ _, nodupkeys_kunion
+
 @[simp] theorem zero_kunion : ∀ (d : m.nodupkeys), nodupkeys_zero k∪ d = m :=
 quotient.induction_on m $ λ _ _, rfl
 
 @[simp] theorem kunion_zero : ∀ (d : m.nodupkeys), d k∪ nodupkeys_zero = m :=
 quotient.induction_on m $ λ _ _, by simp [kunion_coe]
+
+@[simp] theorem kinsert_kunion : ∀ (d₁ : m₁.nodupkeys) (d₂ : m₂.nodupkeys),
+  kunion (nodupkeys_kinsert s d₁) d₂ = kinsert s (nodupkeys_kunion d₁ d₂) :=
+quotient.induction_on₂ m₁ m₂ $ λ _ _ _ _, by simp [kinsert_kunion]
 
 @[simp] theorem mem_of_mem_kunion : ∀ (d₁ : m₁.nodupkeys) (d₂ : m₂.nodupkeys),
   s ∈ d₁ k∪ d₂ → s ∈ m₁ ∨ s ∈ m₂ :=
@@ -214,17 +222,13 @@ theorem mem_kunion_right : ∀ (d₁ : m₁.nodupkeys) (d₂ : m₂.nodupkeys),
   s.1 ∉ m₁.keys → s ∈ m₂ → s ∈ d₁ k∪ d₂ :=
 quotient.induction_on₂ m₁ m₂ $ λ _ _ _ _, mem_kunion_right
 
-@[simp] theorem mem_kunion : ∀ (d₁ : m₁.nodupkeys) (d₂ : m₂.nodupkeys),
-  disjoint m₁.keys m₂.keys → (s ∈ d₁ k∪ d₂ ↔ s ∈ m₁ ∨ s ∈ m₂) :=
-quotient.induction_on₂ m₁ m₂ $ λ _ _ _ _, mem_kunion_iff
-
-@[simp] theorem nodupkeys_kunion : ∀ (d₁ : m₁.nodupkeys) (d₂ : m₂.nodupkeys),
-  (d₁ k∪ d₂).nodupkeys :=
-quotient.induction_on₂ m₁ m₂ $ λ _ _, nodupkeys_kunion
-
 theorem mem_kunion_middle : ∀ (d₁ : m₁.nodupkeys) (d₂ : m₂.nodupkeys) (d₃ : m₃.nodupkeys),
   disjoint (d₁ k∪ d₂).keys m₃.keys → s ∈ d₁ k∪ d₃ → s ∈ (nodupkeys_kunion d₁ d₂) k∪ d₃ :=
 quotient.induction_on₃ m₁ m₂ m₃ $ λ _ _ _ _ _ _, mem_kunion_middle
+
+@[simp] theorem mem_kunion : ∀ (d₁ : m₁.nodupkeys) (d₂ : m₂.nodupkeys),
+  disjoint m₁.keys m₂.keys → (s ∈ d₁ k∪ d₂ ↔ s ∈ m₁ ∨ s ∈ m₂) :=
+quotient.induction_on₂ m₁ m₂ $ λ _ _ _ _, mem_kunion_iff
 
 @[simp] theorem mem_keys_kunion : ∀ (d₁ : m₁.nodupkeys) (d₂ : m₂.nodupkeys),
   a ∈ keys (d₁ k∪ d₂) ↔ a ∈ m₁.keys ∨ a ∈ m₂.keys :=
