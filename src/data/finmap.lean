@@ -336,7 +336,7 @@ end erase
 /- insert -/
 
 section insert
-variables {a : α} {s : sigma β} {f : finmap α β}
+variables {a : α} {s : sigma β} {f g : finmap α β}
 
 instance : has_insert (sigma β) (finmap α β) :=
 ⟨λ s f, ⟨kinsert s f.nodupkeys, nodupkeys_kinsert s f.nodupkeys⟩⟩
@@ -361,6 +361,14 @@ by simp [keys]
 
 @[simp] theorem insert_keys : (insert s f).keys = insert s.1 f.keys :=
 finset.ext' $ by simp
+
+@[simp] theorem disjoint_keys_insert_left :
+  disjoint (insert s f).keys g.keys ↔ s.1 ∉ g.keys ∧ disjoint f.keys g.keys :=
+by simp
+
+@[simp] theorem disjoint_keys_insert_right :
+  disjoint f.keys (insert s g).keys ↔ s.1 ∉ f.keys ∧ disjoint f.keys g.keys :=
+by simp
 
 end insert
 
