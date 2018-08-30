@@ -1,11 +1,5 @@
 import data.array.lemmas data.list.dict
 
-namespace fin
-
-def last (n : ℕ) : fin (n+1) := ⟨_, n.lt_succ_self⟩
-
-end fin
-
 namespace array
 variables {α : Type*} {n : ℕ}
 
@@ -72,7 +66,7 @@ theorem rev_list_repeat {v : α} : ∀ {n} {a : array n α},
   ⟨λ h, by rw [list.repeat, ←pop_back_rev_list] at h;
     exact read_pop_back.mpr ⟨list.head_eq_of_cons_eq h, rev_list_repeat.mp (list.tail_eq_of_cons_eq h)⟩,
    λ h, by rw [list.repeat, push_back_pop_back (h (fin.last n)),
-    push_back_rev_list (pop_back a) v, rev_list_repeat.mpr (read_pop_back.mp h).2]⟩
+    push_back_rev_list, rev_list_repeat.mpr (read_pop_back.mp h).2]⟩
 
 theorem to_list_repeat {v : α} {a : array n α} :
   a.to_list = list.repeat v n ↔ ∀ i, a.read i = v :=

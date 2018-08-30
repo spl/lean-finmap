@@ -6,20 +6,6 @@ local attribute [-simp] sigma.forall
 
 namespace list
 
-section α
-variables {α : Type*}
-open function
-
-theorem join_eq_nil : ∀ {L : list (list α)}, join L = [] ↔ ∀ l ∈ L, l = []
-| []     := by simp
-| (_::_) := by simp [join_eq_nil]
-
-@[simp] theorem join_repeat_nil : ∀ n, join (repeat [] n) = @nil α
-| 0     := rfl
-| (n+1) := by simp [join_repeat_nil]
-
-end α
-
 section αβ
 variables {α : Type*} {β : α → Type*}
 

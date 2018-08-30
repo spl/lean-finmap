@@ -62,8 +62,8 @@ begin
   intros hn hh hb,
   congr,
   repeat { assumption },
-  { apply proof_irrel_heq, substs hn hb, refl },
-  { apply proof_irrel_heq, substs hn hh hb, refl }
+  { apply proof_irrel_heq, substs hn hb },
+  { apply proof_irrel_heq, substs hn hh hb }
 end
 
 theorem ext {m₁ m₂ : hashmap β}
@@ -111,11 +111,11 @@ section to_lists
 variables {m : hashmap β} {i : ℕ} {l : list (sigma β)}
 
 @[simp] theorem mem_to_lists : l ∈ m.to_lists ↔ l ∈ m.buckets :=
-array.mem_to_list _ _
+array.mem_to_list
 
 theorem hash_idx_of_to_lists_enum (he : (i, l) ∈ m.to_lists.enum)
   {s : sigma β} (hl : s ∈ l) : (m.hash s.1).1 = i :=
-have e₁ : ∃ p, m.buckets.read ⟨i, p⟩ = l := m.buckets.mem_to_list_enum.1 he,
+have e₁ : ∃ p, m.buckets.read ⟨i, p⟩ = l := array.mem_to_list_enum.1 he,
 have e₂ : ∃ p, m.hash s.1 = ⟨i, p⟩ := e₁.imp (λ _ h, m.hash_index $ h.symm ▸ hl),
 let ⟨_, h⟩ := e₂ in by rw h
 
